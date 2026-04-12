@@ -18,7 +18,10 @@ from backend.agents.amapr.negotiator import AMAPRNegotiator
 
 logger = logging.getLogger(__name__)
 
-PORTFOLIO_FILE = Path("backend/data/portfolio.json")
+if os.environ.get("VERCEL"):
+    PORTFOLIO_FILE = Path("/tmp/portfolio.json")
+else:
+    PORTFOLIO_FILE = Path("backend/data/portfolio.json")
 
 class AMAPRService:
     """

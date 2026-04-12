@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import type { AgentStatus } from "@/lib/api";
+import { type AgentStatus, API_BASE_URL } from "@/lib/api";
 
 type AgentEvent = {
   id: string;
@@ -102,7 +102,7 @@ export default function IntelligenceFeed({ runId }: { runId: string }) {
   const prevAgentsRef = useRef<Record<string, AgentStatus>>({});
 
   useEffect(() => {
-    const sseUrl = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"}/stream/${runId}`;
+    const sseUrl = `${API_BASE_URL}/stream/${runId}`;
     const source = new EventSource(sseUrl);
 
     source.addEventListener("status", (e) => {

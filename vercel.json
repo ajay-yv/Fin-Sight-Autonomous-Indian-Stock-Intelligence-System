@@ -1,0 +1,66 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/next",
+      "config": {
+        "distDir": "frontend/.next"
+      }
+    },
+    {
+      "src": "backend/main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/analyze",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/status/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/stream/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/runs",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/report/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/eda/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/ml/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/health",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/portfolio/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/rwa/(.*)",
+      "destination": "backend/main.py"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/$1"
+    }
+  ]
+}

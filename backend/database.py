@@ -27,7 +27,11 @@ from backend.models.schemas import AgentStatus, RunStatus, SynthesisResult
 # Engine / Session setup
 # ──────────────────────────────────────────────────────────────────────
 _DB_DIR = os.path.dirname(os.path.abspath(__file__))
-_DB_PATH = os.path.join(_DB_DIR, "finsight.db")
+if os.environ.get("VERCEL"):
+    _DB_PATH = "/tmp/finsight.db"
+else:
+    _DB_PATH = os.path.join(_DB_DIR, "finsight.db")
+
 DATABASE_URL = f"sqlite:///{_DB_PATH}"
 
 engine = create_engine(
