@@ -1,0 +1,30 @@
+{
+  "portfolio_id": "P-001",
+  "assets": [
+    {
+      "symbol": "RELIANCE.NS",
+      "asset_class": "EQUITY",
+      "units": 100.0,
+      "current_price": 1350.2,
+      "valuation": 135020.0,
+      "weight": 0.5168526422569717
+    },
+    {
+      "symbol": "TCS.NS",
+      "asset_class": "EQUITY",
+      "units": 50.0,
+      "current_price": 2524.3,
+      "valuation": 126215.00000000001,
+      "weight": 0.48314735774302836
+    }
+  ],
+  "total_valuation": 261235.0,
+  "target_weights": {
+    "EQUITY": 0.6,
+    "REAL_ESTATE": 0.2,
+    "PRIVATE_CREDIT": 0.1,
+    "CASH": 0.1
+  },
+  "drift_score": 0.15,
+  "last_rebalanced": null
+}
