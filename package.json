@@ -18,5 +18,8 @@
     "lightningcss": "^1.28.2",
     "tailwindcss": "^4",
     "@tailwindcss/postcss": "^4"
+  },
+  "optionalDependencies": {
+    "lightningcss-linux-x64-gnu": "^1.28.2"
   }
 }
