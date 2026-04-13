@@ -31,12 +31,27 @@ interface SimulationReport {
   narrative_summary: string;
 }
 
-export default function MacroSimulator() {
+export default function MacroSimulator({ onBack }: { onBack?: () => void }) {
   const [report, setReport] = useState<SimulationReport | null>(null);
   const [loading, setLoading] = useState(false);
   const [activeScenario, setActiveScenario] = useState("SUEZ_BLOCKAGE");
+  const [macroBaselines, setMacroBaselines] = useState<any>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
+
+  useEffect(() => {
+    fetchMacroBaselines();
+  }, []);
+
+  const fetchMacroBaselines = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/stock/macro-indicators`);
+      const data = await res.json();
+      setMacroBaselines(data);
+    } catch (err) {
+      console.error("Failed to fetch macro baselines", err);
+    }
+  };
 
   const runSimulation = async (key: string) => {
     setLoading(true);
@@ -57,6 +72,11 @@ export default function MacroSimulator() {
       {/* Sidebar: Scenarios */}
       <div className="w-80 border-r border-[#1a1a1a] bg-[#0c0c0c] flex flex-col">
         <div className="p-6 border-b border-[#1a1a1a]">
+          {onBack && (
+            <button onClick={onBack} className="text-[10px] uppercase font-bold text-zinc-600 hover:text-amber-500 mb-4 transition-colors tracking-widest flex items-center gap-2">
+              ← Return to Dashboard
+            </button>
+          )}
           <h2 className="text-xs font-black tracking-[0.3em] text-amber-500 uppercase flex items-center gap-2">
             <LucideGlobe size={16} />
             Digital Twin GMSS
@@ -84,13 +104,36 @@ export default function MacroSimulator() {
           ))}
         </div>
 
+        {macroBaselines && (
+          <div className="p-6 bg-cyan-500/5 border-t border-[#1a1a1a]">
+            <div className="text-[9px] uppercase text-cyan-500 font-bold mb-3 flex justify-between">
+              <span>Macro Baseline</span>
+              <span className="animate-pulse">● LIVE</span>
+            </div>
+            <div className="space-y-3 text-[9px] font-bold">
+              <div className="flex justify-between">
+                <span className="text-[#666]">INDIA VIX</span>
+                <span className={macroBaselines.india_vix > 20 ? "text-red-400" : "text-green-400"}>{macroBaselines.india_vix.toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666]">INFLATION (CPI)</span>
+                <span className="text-[#ccc]">{macroBaselines.inflation_cpi}%</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-[#666]">FII FLOW (CR)</span>
+                <span className="text-cyan-400">₹{macroBaselines.fii_net_flow_cr}</span>
+              </div>
+            </div>
+          </div>
+        )}
+
         {report && (
           <div className="p-6 bg-amber-500/5 border-t border-[#1a1a1a]">
             <div className="text-[9px] uppercase text-amber-500 font-bold mb-2">Sim Metadata</div>
             <div className="space-y-2 text-[9px] text-[#888]">
-              <div className="flex justify-between"><span>ID:</span> <span className="text-[#ccc]">{report.simulation_id}</span></div>
-              <div className="flex justify-between"><span>Shock:</span> <span className="text-[#ccc]">{report.shock.initial_magnitude * 100}%</span></div>
-              <div className="flex justify-between"><span>Impact:</span> <span className="text-[#ccc]">{report.affected_sectors.join(", ")}</span></div>
+              <div className="flex justify-between"><span>ID:</span> <span className="text-[#ccc]">{report?.simulation_id}</span></div>
+              <div className="flex justify-between"><span>Shock:</span> <span className="text-[#ccc]">{((report?.shock?.initial_magnitude || 0) * 100).toFixed(0)}%</span></div>
+              <div className="flex justify-between"><span>Impact:</span> <span className="text-[#ccc]">{report?.affected_sectors?.join(", ")}</span></div>
             </div>
           </div>
         )}
@@ -107,8 +150,8 @@ export default function MacroSimulator() {
           <div className="p-8 space-y-8">
             {/* Header / Narrative */}
             <div className="bg-[#111] p-6 border-l-4 border-amber-500 rounded-r-lg">
-              <h3 className="text-xl font-bold mb-2 uppercase italic">{report.shock.description}</h3>
-              <p className="text-xs text-[#888] leading-relaxed">{report.narrative_summary}</p>
+              <h3 className="text-xl font-bold mb-2 uppercase italic">{report?.shock?.description || "Simulating Scenario..."}</h3>
+              <p className="text-xs text-[#888] leading-relaxed">{report?.narrative_summary}</p>
             </div>
 
             {/* Visualizer Grid */}
@@ -142,7 +185,7 @@ export default function MacroSimulator() {
                   Economic Propagations
                 </h4>
                 <div className="flex-1 space-y-6">
-                  {report.propagation_steps.slice(0, 5).map((step, i) => (
+                  {report?.propagation_steps?.slice(0, 5).map((step, i) => (
                     <div key={i} className="space-y-1">
                       <div className="flex justify-between text-[9px]">
                         <span className="text-[#888] uppercase">Step {step.step}: {step.target_sector}</span>

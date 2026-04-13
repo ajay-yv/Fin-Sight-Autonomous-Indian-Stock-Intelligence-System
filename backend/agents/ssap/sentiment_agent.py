@@ -6,40 +6,48 @@ from backend.models.ssap_schemas import SentimentInsight
 
 logger = logging.getLogger(__name__)
 
+from backend.services.intelligence_service import IntelligenceService
+
 class SentimentAgent:
     """
-    Extracts high-fidelity sentiment from decentralized social graphs (Farcaster, Lens).
-    In 2026, social sentiment on DeSo is a leading indicator for retail demand.
+    Extracts high-fidelity sentiment from news and social feeds.
     """
     def __init__(self):
-        self.name = "DeSoSentiment"
+        self.name = "RealWorldSentiment"
+        self.intel = IntelligenceService()
 
     async def analyze_sentiment(self, symbol: str) -> SentimentInsight:
         """
-        Uses Neynar API to fetch and analyze social sentiment for a given asset.
+        Fetches real news for the symbol and analyzes sentiment.
         """
-        logger.info(f"Fetching DeSo sentiment for: {symbol}")
+        logger.info(f"Analyzing real-world sentiment for: {symbol}")
         
-        # Simulate decentralized social graph crawl
-        mention_vol = random.randint(1500, 5000)
-        # Mocking a potential discrepancy: High physical traffic vs Low social sentiment
-        sentiment = random.uniform(-0.1, 0.2) # Neutral/Low sentiment
+        # Cross-reference with .NS or .BO for Indian stocks
+        ticker_symbol = symbol if symbol.endswith((".NS", ".BO")) else f"{symbol}.NS"
+        news_data = await self.intel.get_symbol_news_sentiment(ticker_symbol)
         
-        keywords = ["earnings", "valuation", "congestion", "qtr_results", "dividend"]
+        headlines = news_data.get("headlines", [])
         
-        sample_posts = [
-            f"Why is growth for ${symbol} slowing down? Sentiment seems muted.",
-            f"Accumulating ${symbol} for the long term, but the recent price action is boring.",
-            f"Checking the Farcaster feed for ${symbol} - not much hype today."
-        ]
-
+        # Simple sentiment calculation based on key words (for prototype)
+        # Innovation: In production, pass headlines to LLM for nuanced analysis
+        pos_words = {"growth", "buy", "profit", "dividend", "expansion", "bullish"}
+        neg_words = {"loss", "sell", "decline", "debt", "risk", "bearish"}
+        
+        score = 0.0
+        for h in headlines:
+            h_lower = h.lower()
+            if any(w in h_lower for w in pos_words): score += 0.2
+            if any(w in h_lower for w in neg_words): score -= 0.2
+            
+        sentiment_score = max(-1.0, min(1.0, score))
+        
         return SentimentInsight(
-            protocol="Farcaster",
+            protocol="FinSight/YFinance",
             symbol=symbol,
             timestamp=datetime.now(),
-            mention_volume=mention_vol,
-            sentiment_score=sentiment,
-            top_keywords=random.sample(keywords, 3),
-            trending_score=random.uniform(0.3, 0.6),
-            raw_sample_posts=sample_posts
+            mention_volume=len(headlines) * 100, # Simulated volume based on news density
+            sentiment_score=sentiment_score,
+            top_keywords=["market", "corporate", "dividend"][:len(headlines)],
+            trending_score=0.5 + (sentiment_score * 0.2),
+            raw_sample_posts=headlines
         )

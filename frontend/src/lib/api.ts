@@ -11,6 +11,10 @@ const apiClient = axios.create({
   timeout: 60000,
 });
 
+if (typeof window !== "undefined") {
+  console.log("[FinSight API] Initialized with baseURL:", API_BASE_URL || "(empty — using current origin)");
+}
+
 // ---------------------------------------------------------------------------
 // Types — matching the FastAPI backend exactly
 // ---------------------------------------------------------------------------

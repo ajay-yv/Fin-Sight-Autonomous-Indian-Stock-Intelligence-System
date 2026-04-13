@@ -153,4 +153,5 @@ async def run(symbol: str, ohlcv: OHLCVData) -> RiskMetrics:
         risk_level=risk_level,
         reasoning=reasoning,
         key_triggers=key_triggers,
+        is_demo=False,
     )

@@ -15,7 +15,7 @@ import MacroSimulator from "@/components/MacroSimulator";
 import BioFeedbackHub from "@/components/BioFeedbackHub";
 import { OHLCVPoint, AgentSignal } from "@/components/charts/CandlestickChart";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 interface IngestionPayload {
   dates: string[];
@@ -99,9 +99,12 @@ export default function WarRoomPage() {
   }, [runId]);
 
   const chartData = useMemo<OHLCVPoint[]>(() => {
-    if (!activeSymbol || !runStatus) return [];
+    if (!activeSymbol || !runStatus?.agents) return [];
+    
+    const agentsForSymbol = runStatus.agents[activeSymbol];
+    if (!agentsForSymbol) return [];
 
-    const ingestionAgent = runStatus.agents[activeSymbol]?.["data_ingestion"];
+    const ingestionAgent = agentsForSymbol["data_ingestion"];
     if (!isIngestionPayload(ingestionAgent?.data)) return [];
 
     const d = ingestionAgent.data;
@@ -128,7 +131,7 @@ export default function WarRoomPage() {
     return mapped;
   }, [activeSymbol, runStatus]);
 
-  const synthesis = runStatus?.results[activeSymbol];
+  const synthesis = activeSymbol && runStatus?.results ? runStatus.results[activeSymbol] : null;
   const logicMap = useMemo(() => {
     const orderedAgents = [
       "technical",
@@ -232,7 +235,7 @@ export default function WarRoomPage() {
       };
     });
   }, [synthesis]);
-  const criticAgent = runStatus?.agents[activeSymbol]?.["critic"];
+  const criticAgent = (activeSymbol && runStatus?.agents?.[activeSymbol]) ? runStatus.agents[activeSymbol]["critic"] : null;
   const criticChallenges = extractCriticChallenges(criticAgent?.data);
 
   // Generate signals based on logic map, anchoring them to the latest date
@@ -328,15 +331,15 @@ export default function WarRoomPage() {
       </div>
 
       {activeTab === "execution" ? (
-        <PortfolioRebalancer />
+        <PortfolioRebalancer onBack={() => setActiveTab("intelligence")} />
       ) : activeTab === "ssap" ? (
-        <SSAPIntelligence symbol={activeSymbol} />
+        <SSAPIntelligence symbol={activeSymbol} onBack={() => setActiveTab("intelligence")} />
       ) : activeTab === "darkpool" ? (
-        <RetailDarkPool symbol={activeSymbol} />
+        <RetailDarkPool symbol={activeSymbol} onBack={() => setActiveTab("intelligence")} />
       ) : activeTab === "gmss" ? (
-        <MacroSimulator />
+        <MacroSimulator onBack={() => setActiveTab("intelligence")} />
       ) : activeTab === "biofeedback" ? (
-        <BioFeedbackHub />
+        <BioFeedbackHub onBack={() => setActiveTab("intelligence")} />
       ) : (
         /* Main 3-Panel Layout */
         <div className="flex-1 flex w-full overflow-hidden bg-[var(--color-war-border)] gap-px">

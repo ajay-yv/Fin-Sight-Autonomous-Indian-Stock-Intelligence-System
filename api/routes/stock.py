@@ -263,3 +263,12 @@ async def get_stock_ohlcv(symbol: str, period: str = "6mo") -> dict[str, Any]:
         "period": period,
         "candles": data,
     }
+
+@router.get("/macro-indicators")
+async def get_macro_indicators():
+    """
+    Fetches real-world Indian macro indicators.
+    """
+    from backend.services.intelligence_service import IntelligenceService
+    intel = IntelligenceService()
+    return await intel.get_macro_indicators()

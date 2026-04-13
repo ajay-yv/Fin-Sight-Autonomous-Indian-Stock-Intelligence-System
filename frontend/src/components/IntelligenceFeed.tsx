@@ -151,6 +151,9 @@ export default function IntelligenceFeed({ runId }: { runId: string }) {
                 tone = "amber";
               } else {
                 msg = agent.reasoning || "Critical failure encountered during processing.";
+                if (agent.status === "failed" && !msg.toLowerCase().includes("failed")) {
+                  msg = `Analysis Failed: ${msg}`;
+                }
                 tone = "red";
               }
             } else if (agent.status === "completed") {

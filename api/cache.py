@@ -52,3 +52,6 @@ class TTLCache:
 
 live_quote_cache = TTLCache()
 analysis_cache = TTLCache()
+ohlcv_cache = TTLCache()
+news_cache = TTLCache()
+earnings_cache = TTLCache()

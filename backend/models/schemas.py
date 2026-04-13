@@ -101,6 +101,7 @@ class TechnicalSignals(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -122,6 +123,7 @@ class FundamentalData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -139,6 +141,7 @@ class SentimentData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -155,6 +158,7 @@ class RegulatoryData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -173,6 +177,7 @@ class SocialPulseData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -191,6 +196,7 @@ class OptionsFlowData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -208,6 +214,7 @@ class EarningsWhisperData(BaseModel):
     confidence: float = Field(ge=0.0, le=1.0)
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -277,6 +284,7 @@ class RiskMetrics(BaseModel):
     risk_level: Literal["LOW", "MEDIUM", "HIGH"]
     reasoning: str
     key_triggers: list[str] = Field(default_factory=list)
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -301,6 +309,7 @@ class MacroResult(BaseModel):
     contagion_risk_score: float = Field(default=0.0, ge=0.0, le=10.0)
     vulnerable_sectors: list[str] = Field(default_factory=list)
     global_shocks: dict[str, float] = Field(default_factory=dict)  # {asset: %_change}
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -347,6 +356,7 @@ class MLPrediction(BaseModel):
     suppression_reason: Optional[str] = None
     weight_override: Optional[float] = None
     score_override: Optional[int] = None
+    is_demo: bool = False
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -360,8 +370,8 @@ class SynthesisResult(BaseModel):
     overall_confidence: float = Field(ge=0.0, le=1.0)
     weighted_score: float = Field(
         default=0.0,
-        ge=-1.0,
-        le=1.0,
+        ge=-10.0,
+        le=10.0,
         description="Raw weighted score before verdict bucketing",
     )
     price_target_pct: float

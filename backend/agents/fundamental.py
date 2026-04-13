@@ -218,4 +218,5 @@ async def run(symbol: str, ohlcv: OHLCVData) -> FundamentalData:
         confidence=confidence,
         reasoning=reasoning,
         key_triggers=key_triggers,
+        is_demo=False,
     )

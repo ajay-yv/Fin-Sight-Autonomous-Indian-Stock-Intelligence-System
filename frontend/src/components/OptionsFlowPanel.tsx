@@ -11,6 +11,7 @@ interface OptionsFlowData {
   confidence: number;
   reasoning: string;
   key_triggers: string[];
+  is_demo?: boolean;
 }
 
 interface OptionsFlowPanelProps {
@@ -74,8 +75,15 @@ export default function OptionsFlowPanel({ data, symbol }: OptionsFlowPanelProps
           </span>
           <p className="font-serif text-sm font-bold">{symbol} Options Flow</p>
         </div>
-        <div className={`border px-2 py-0.5 font-mono text-[10px] font-bold ${signalColor}`}>
-          {data.signal}
+        <div className="flex gap-2 items-center">
+          {data.is_demo && (
+            <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border border-amber-200 animate-pulse">
+              SIMULATION
+            </div>
+          )}
+          <div className={`border px-2 py-0.5 font-mono text-[10px] font-bold ${signalColor}`}>
+            {data.signal}
+          </div>
         </div>
       </div>
 

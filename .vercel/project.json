@@ -1,0 +1,16 @@
+{
+  "projectId": "prj_yvBZJm41T3BOl86k92H8dQow3ucO",
+  "orgId": "team_4Izsgc0VzPZKYSiDO8vUVzE5",
+  "projectName": "fin-sight-autonomous-stock-intelligence",
+  "settings": {
+    "createdAt": 1775977207218,
+    "framework": null,
+    "devCommand": null,
+    "installCommand": null,
+    "buildCommand": null,
+    "outputDirectory": null,
+    "rootDirectory": null,
+    "directoryListing": false,
+    "nodeVersion": "24.x"
+  }
+}

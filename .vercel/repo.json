@@ -1,0 +1,29 @@
+{
+  "remoteName": "origin",
+  "projects": [
+    {
+      "id": "prj_RMY4HZaWFl4oz4bSryd02noNSKTa",
+      "name": "fin-sight-autonomous-stock-intelligence-frontend",
+      "directory": "frontend",
+      "orgId": "team_4Izsgc0VzPZKYSiDO8vUVzE5"
+    },
+    {
+      "id": "prj_lCeR9rY4uyQuXY21p1ZeUbocFzHe",
+      "name": "fin-sight-autonomous-stock-intelligence-j9se",
+      "directory": ".",
+      "orgId": "team_4Izsgc0VzPZKYSiDO8vUVzE5"
+    },
+    {
+      "id": "prj_yvBZJm41T3BOl86k92H8dQow3ucO",
+      "name": "fin-sight-autonomous-stock-intelligence",
+      "directory": ".",
+      "orgId": "team_4Izsgc0VzPZKYSiDO8vUVzE5"
+    },
+    {
+      "id": "prj_p7NiiYPAicBziygzocfFqfDt9Gw9",
+      "name": "fin-sight-autonomous-stock-intelligence-bjgz",
+      "directory": ".",
+      "orgId": "team_4Izsgc0VzPZKYSiDO8vUVzE5"
+    }
+  ]
+}

@@ -30,27 +30,27 @@ class MultimodalSynthesisAgent:
             prediction = "BULLISH_SURPRISE"
             discrepancy = True
             reasoning = (
-                f"Satellite imagery detects high retail density ({geo.object_counts.get('cars', 0)} vehicles), "
-                f"indicating strong physical demand. However, Farcaster sentiment is muted ({sentiment.sentiment_score:.2f}). "
-                "This divergence suggests an imminent earnings beat that the market has not yet priced in."
+                f"Operational analysis detects high activity density ({geo.density_score*100:.1f}%) "
+                f"based on recent corporate footprints. However, news-based sentiment remains muted ({sentiment.sentiment_score:.2f}). "
+                "This divergence suggests latent strength that the broader market has not yet prioritized."
             )
         elif geo.density_score < 0.4 and sentiment.sentiment_score > 0.6:
             prediction = "BEARISH_SURPRISE"
             discrepancy = True
             reasoning = (
-                f"Social sentiment is overly optimistic ({sentiment.sentiment_score:.2f}), "
-                f"but satellite tracking shows declining foot traffic ({geo.density_score*100:.1f}%) and logistic slowdowns. "
-                "The physical data does not support the digital hype, suggesting a downside surprise."
+                f"Market sentiment is overly optimistic ({sentiment.sentiment_score:.2f}), "
+                f"but operational tracking shows a low intensity signal ({geo.density_score*100:.1f}%). "
+                "The fundamental operational data does not support the digital sentiment, suggesting a downside surprise."
             )
         else:
-            reasoning = "Physical activity and social sentiment are aligned. No significant alpha discrepancy detected."
-
+            reasoning = "Operational signals and news sentiment are fundamentally aligned. No significant alpha discrepancy detected."
+ 
         return SSAPVerdict(
             symbol=symbol,
             run_id=f"SSAP-{datetime.now().strftime('%Y%j%H%M')}",
             timestamp=datetime.now(),
-            geospatial_summary=f"Detected {geo.object_counts.get('cars', 0)} cars in {geo.activity_type}.",
-            sentiment_summary=f"Sentiment score of {sentiment.sentiment_score:.2f} across {sentiment.mention_volume} DeSo posts.",
+            geospatial_summary=f"Operational signal type: {geo.activity_type} (Intensity: {geo.density_score*100:.1f}%).",
+            sentiment_summary=f"Analysis of latest {sentiment.mention_volume/100:.0f} news cycles yields {sentiment.sentiment_score:.2f} score.",
             alpha_discrepancy=discrepancy,
             discrepancy_score=discrepancy_score,
             prediction=prediction,

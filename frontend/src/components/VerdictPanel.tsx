@@ -380,6 +380,12 @@ export default function VerdictPanel({ symbol, synthesis, agents }: VerdictPanel
           <span className="font-mono text-[10px] uppercase tracking-widest text-[#666]">
             NSE INTELLIGENCE REPORT
           </span>
+          {Object.values(agents).some(a => (a.data as any)?.is_demo) && (
+            <div className="bg-amber-100 text-amber-700 px-3 py-1 rounded text-[10px] font-bold border border-amber-200 animate-pulse flex items-center gap-2">
+              <span className="w-2 h-2 bg-amber-500 rounded-full"></span>
+              INSTITUTIONAL SIMULATION MODE
+            </div>
+          )}
         </div>
 
         <h1 className="font-serif text-[48px] font-black text-[var(--color-war-text)] leading-tight mb-4 tracking-tighter">

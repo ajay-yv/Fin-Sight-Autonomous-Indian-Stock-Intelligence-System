@@ -186,16 +186,21 @@ def _save_failure(run_id: str, symbol: str, agent_name: str, error: str) -> None
 
 def _mark_symbol_downstream_failed(run_id: str, symbol: str, reason: str) -> None:
     """Mark all downstream per-symbol agents as failed."""
-    for agent_name in (
+    downstream_agents = (
         "technical",
         "fundamental",
         "sentiment",
         "risk",
         "macro",
         "ml_prediction",
+        "regulatory",
+        "social_pulse",
+        "options_flow",
+        "earnings",
         "synthesis",
         "critic",
-    ):
+    )
+    for agent_name in downstream_agents:
         _save_failure(run_id, symbol, agent_name, reason)
 
 
@@ -509,6 +514,52 @@ async def _run_symbol_analysis_stage(
         reasoning="Macro data unavailable — using neutral fallback.",
     )
 
+    _reg_result = reg_result or RegulatoryData(
+        symbol=symbol,
+        events=[],
+        max_risk_score=0.0,
+        sentiment_impact="neutral",
+        signal="HOLD",
+        confidence=0.3,
+        reasoning="Regulatory agent unavailable — using fallback.",
+        key_triggers=["Data ingestion failure"],
+    )
+    _social_result = social_result or SocialPulseData(
+        symbol=symbol,
+        social_score=0.0,
+        volume_spike_flag=False,
+        dominant_platform="Fallback",
+        top_keywords=[],
+        sentiment_label="neutral",
+        signal="HOLD",
+        confidence=0.3,
+        reasoning="Social intelligence unavailable — using fallback.",
+        key_triggers=["Social buzz data unavailable"],
+    )
+    _options_result = options_result or OptionsFlowData(
+        symbol=symbol,
+        pcr=1.0,
+        iv_rank=0.0,
+        max_pain=0.0,
+        gex_net=0.0,
+        oi_change_velocity=0.0,
+        signal="HOLD",
+        confidence=0.3,
+        reasoning="Options flow data unavailable — using fallback.",
+        key_triggers=["F&O data ingestion failure"],
+    )
+    _earnings_result = earnings_result or EarningsWhisperData(
+        symbol=symbol,
+        whisper_score=5.0,
+        surprise_probability=0.5,
+        concall_tone="cautious",
+        alternative_data_proxy="none",
+        signal="HOLD",
+        confidence=0.3,
+        reasoning="Earnings whisper engine unavailable — using fallback.",
+        key_triggers=["Earnings cues unavailable"],
+    )
+
     try:
         synth_result = await synthesis.run(
             symbol,
@@ -518,10 +569,10 @@ async def _run_symbol_analysis_stage(
             _risk_result,
             _ml_prediction,
             _macro_result,
-            reg_result,
-            social_result,
-            options_result,
-            earnings_result,
+            _reg_result,
+            _social_result,
+            _options_result,
+            _earnings_result,
         )
 
         # Stage 3.5: Critic review runs when any valid agent disagrees with synthesis.
@@ -611,8 +662,8 @@ async def _run_analysis_async(run_id: str, symbols: list[str]) -> None:
     )
 
     # Stage 3: Per-symbol analysis with concurrency control
-    # Limits to 3 concurrent symbols to avoid API / context window pressure
-    MAX_CONCURRENT_SYMBOLS = 3
+    # Limits to 6 concurrent symbols to satisfy user speed requirements
+    MAX_CONCURRENT_SYMBOLS = 6
     sem = asyncio.Semaphore(MAX_CONCURRENT_SYMBOLS)
 
     async def _analyze_with_sem(symbol: str):

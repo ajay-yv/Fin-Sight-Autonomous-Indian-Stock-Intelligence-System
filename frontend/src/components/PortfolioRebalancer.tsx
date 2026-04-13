@@ -48,13 +48,13 @@ interface AMAPRRunResult {
   timestamp: string;
 }
 
-export default function PortfolioRebalancer() {
+export default function PortfolioRebalancer({ onBack }: { onBack?: () => void }) {
   const [portfolio, setPortfolio] = useState<PortfolioState | null>(null);
   const [negotiation, setNegotiation] = useState<AMAPRRunResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   useEffect(() => {
     fetchPortfolio();
@@ -92,6 +92,9 @@ export default function PortfolioRebalancer() {
   if (fetchError) {
     return (
       <div className="p-8 font-mono text-xs text-red-600 flex flex-col items-center gap-3">
+        {onBack && (
+            <button onClick={onBack} className="self-start text-[10px] uppercase font-bold text-zinc-400 hover:text-black mb-4">← Return to Dashboard</button>
+        )}
         <span className="text-2xl">⚠</span>
         <p className="font-bold uppercase">{fetchError}</p>
         <button onClick={fetchPortfolio} className="border border-red-400 px-4 py-1 uppercase text-[10px] hover:bg-red-50 transition-colors">
@@ -101,17 +104,37 @@ export default function PortfolioRebalancer() {
     );
   }
 
-  if (!portfolio) return <div className="p-8 font-mono text-xs opacity-50 animate-pulse">Initializing Portfolio Engine...</div>;
+  if (!portfolio) return (
+    <div className="p-8 flex flex-col h-full bg-[#fdfdfc]">
+       {onBack && (
+            <button onClick={onBack} className="self-start text-[10px] uppercase font-bold text-zinc-400 hover:text-black mb-4">← Return to Dashboard</button>
+        )}
+        <div className="font-mono text-xs opacity-50 animate-pulse">Initializing Portfolio Engine...</div>
+    </div>
+  );
 
   const totalVal = portfolio.total_valuation;
 
   return (
     <div className="flex flex-col h-full bg-[#fdfdfc] text-[var(--color-war-text)]">
       {/* Header */}
-      <div className="p-6 border-b border-[var(--color-war-border)] flex justify-between items-center">
-        <div>
-          <h2 className="font-serif text-2xl font-black italic uppercase tracking-tight">AMAPR Agentic Engine</h2>
-          <p className="font-mono text-[10px] uppercase text-[#888]">LangGraph Multi-Agent Portfolio Rebalancer</p>
+      <div className="p-6 border-b border-[var(--color-war-border)] flex justify-between items-center bg-white shadow-sm z-10">
+        <div className="flex items-center gap-6">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="p-3 border border-[var(--color-war-border)] rounded hover:bg-zinc-50 transition-all group"
+              title="Return to War Room"
+            >
+              <div className="flex items-center gap-2">
+                <span className="font-mono text-[10px] uppercase font-bold tracking-widest text-[#888] group-hover:text-black transition-colors">← Dashboard</span>
+              </div>
+            </button>
+          )}
+          <div>
+            <h2 className="font-serif text-2xl font-black italic uppercase tracking-tight">AMAPR Agentic Engine</h2>
+            <p className="font-mono text-[10px] uppercase text-[#888]">LangGraph Multi-Agent Portfolio Rebalancer</p>
+          </div>
         </div>
         <div className="text-right">
           <div className="font-serif text-xl font-bold">₹{totalVal.toLocaleString()}</div>

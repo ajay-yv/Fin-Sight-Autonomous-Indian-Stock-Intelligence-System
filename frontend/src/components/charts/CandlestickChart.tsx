@@ -43,7 +43,7 @@ export interface CandlestickChartProps {
 type TimeRange = "1M" | "3M" | "6M" | "1Y";
 
 const VALID_SYMBOL = /^[A-Z0-9&.\-]{1,20}$/;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 function markerTimeToMillis(value: Time): number {
   if (typeof value === "string") {

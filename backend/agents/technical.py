@@ -167,4 +167,5 @@ async def run(symbol: str, ohlcv: OHLCVData) -> TechnicalSignals:
         confidence=confidence,
         reasoning=reasoning,
         key_triggers=key_triggers,
+        is_demo=False,
     )

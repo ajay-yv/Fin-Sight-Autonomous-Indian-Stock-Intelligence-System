@@ -5,20 +5,36 @@
       "symbol": "RELIANCE.NS",
       "asset_class": "EQUITY",
       "units": 100.0,
-      "current_price": 1350.2,
-      "valuation": 135020.0,
-      "weight": 0.5168526422569717
+      "current_price": 1315.1,
+      "valuation": 131510.0,
+      "weight": 0.32460384064767733
     },
     {
       "symbol": "TCS.NS",
       "asset_class": "EQUITY",
       "units": 50.0,
-      "current_price": 2524.3,
-      "valuation": 126215.00000000001,
-      "weight": 0.48314735774302836
+      "current_price": 2472.6,
+      "valuation": 123630.0,
+      "weight": 0.305153774004048
+    },
+    {
+      "symbol": "MRE-12",
+      "asset_class": "REAL_ESTATE",
+      "units": 1.0,
+      "current_price": 100000.0,
+      "valuation": 100000.0,
+      "weight": 0.24682825689884977
+    },
+    {
+      "symbol": "SPD-05",
+      "asset_class": "PRIVATE_CREDIT",
+      "units": 1.0,
+      "current_price": 50000.0,
+      "valuation": 50000.0,
+      "weight": 0.12341412844942488
     }
   ],
-  "total_valuation": 261235.0,
+  "total_valuation": 405140.0,
   "target_weights": {
     "EQUITY": 0.6,
     "REAL_ESTATE": 0.2,

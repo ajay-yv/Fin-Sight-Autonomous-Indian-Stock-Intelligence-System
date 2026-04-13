@@ -24,6 +24,13 @@ async def get_darkpool_stats():
         "protocol_version": "v2.0-2026-confidential"
     }
 
+@router.get("/signals")
+async def get_institutional_signals(symbol: str):
+    """
+    Fetches real-world institutional signals for the given symbol.
+    """
+    return await darkpool_service.get_institutional_signals(symbol)
+
 @router.get("/trades")
 async def get_my_recent_trades():
     """

@@ -135,9 +135,10 @@ class CriticAgent:
         agent_results: list[dict[str, Any]],
         reason: str,
     ) -> str:
-        if not OPENROUTER_API_KEY:
-            logger.warning("OPENROUTER_API_KEY not set - critic skipped for %s", symbol)
-            return reason
+        is_placeholder = OPENROUTER_API_KEY.startswith("your_") or "api_key_here" in OPENROUTER_API_KEY
+        if not OPENROUTER_API_KEY or is_placeholder:
+            logger.warning("OPENROUTER_API_KEY is missing/placeholder - critic skipped for %s", symbol)
+            return f"Critic bypassed (Demo Mode): {reason}."
 
         confidence_pct = round(float(synthesis_result.overall_confidence) * 100, 1)
 

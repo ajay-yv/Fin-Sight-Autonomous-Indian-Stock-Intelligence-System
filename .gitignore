@@ -1,26 +1,23 @@
+# Logs
+*.log
+backend_startup.log
+backend_final.log
+backend_debug.log
+backend_error.log
+backend_error_final.log
+
 # Python
-venv/
 __pycache__/
 *.pyc
-*.pyo
-*.egg-info/
-
-# Environment
 .env
+venv/
 
-# Database
-*.db
+# Node
+node_modules/
+.next/
+dist/
+build/
 
-# OS
-.DS_Store
-Thumbs.db
-
-# Logs
-backend_log.txt
-backend_pid.txt
-
-# Frontend
-frontend/node_modules/
-frontend/.next/
-frontend/out/
-frontend/.turbo/
+# Debug scripts
+debug_biometrics.py
+debug_earnings_agent.py

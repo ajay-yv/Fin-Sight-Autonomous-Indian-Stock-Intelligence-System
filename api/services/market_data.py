@@ -179,6 +179,10 @@ class NSEMarketDataService:
                     raise UpstreamServiceError("NSE request timed out or failed") from exc
 
             backoff = self._retry_backoff_seconds * (2 ** (attempt - 1)) + random.uniform(0.0, 0.2)
+            logger.warning(
+                "Upstream request failed (attempt %d/%d). Retrying in %.2fs...",
+                attempt, self._max_retries, backoff
+            )
             await asyncio.sleep(backoff)
 
         raise UpstreamServiceError("NSE request retries exhausted")

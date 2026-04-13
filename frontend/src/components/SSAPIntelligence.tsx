@@ -37,10 +37,10 @@ interface SSAPVerdict {
   confidence_score: number;
 }
 
-export default function SSAPIntelligence({ symbol }: { symbol: string }) {
+export default function SSAPIntelligence({ symbol, onBack }: { symbol: string, onBack?: () => void }) {
   const [verdict, setVerdict] = useState<SSAPVerdict | null>(null);
   const [loading, setLoading] = useState(false);
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   useEffect(() => {
     if (symbol) fetchVerdict();
@@ -59,18 +59,35 @@ export default function SSAPIntelligence({ symbol }: { symbol: string }) {
     }
   };
 
-  if (!symbol) return <div className="p-8 font-mono text-xs opacity-50">Select an asset to initialize SSAP...</div>;
+  if (!symbol) return (
+    <div className="p-8 flex flex-col h-full bg-[#0a0a0a]">
+        {onBack && (
+            <button onClick={onBack} className="self-start text-[10px] uppercase font-bold text-zinc-500 hover:text-white mb-4">← Return to Dashboard</button>
+        )}
+        <div className="font-mono text-xs opacity-50 italic">Select an asset to initialize SSAP...</div>
+    </div>
+  );
 
   return (
     <div className="flex flex-col h-full bg-[#0a0a0a] text-white font-mono overflow-y-auto">
       {/* Header */}
-      <div className="p-6 border-b border-[#333] flex justify-between items-center bg-[#111]">
-        <div>
-          <h2 className="text-xl font-bold tracking-tighter flex items-center gap-2 text-cyan-400">
-            <LucideSatellite size={20} />
-            SSAP MULTIMODAL ALPHA
-          </h2>
-          <p className="text-[9px] uppercase tracking-widest text-[#666]">Satellite-to-Sentiment Alpha Predictor v1.0</p>
+      <div className="p-6 border-b border-[#333] flex justify-between items-center bg-[#111] sticky top-0 z-10">
+        <div className="flex items-center gap-6">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="px-3 py-2 border border-[#333] rounded hover:border-[#666] hover:bg-[#222] transition-all group"
+            >
+              <span className="text-[10px] uppercase font-bold text-zinc-500 group-hover:text-white transition-colors">← DASHBOARD</span>
+            </button>
+          )}
+          <div>
+            <h2 className="text-xl font-bold tracking-tighter flex items-center gap-2 text-cyan-400">
+              <LucideSatellite size={20} />
+              SSAP MULTIMODAL ALPHA
+            </h2>
+            <p className="text-[9px] uppercase tracking-widest text-[#666]">Satellite-to-Sentiment Alpha Predictor v1.0</p>
+          </div>
         </div>
         {verdict && (
           <div className="text-right">
@@ -129,18 +146,19 @@ export default function SSAPIntelligence({ symbol }: { symbol: string }) {
               </div>
               
               <div className="aspect-video bg-[#1a1a1a] rounded border border-[#333] relative overflow-hidden group">
-                {/* Mock image - would be SkyWatch crop */}
                 <img 
-                  src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=1000" 
+                  src={verdict.geospatial_summary.includes("Standard") 
+                    ? "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&q=80&w=1000"
+                    : "https://images.unsplash.com/photo-1581091226825-a6a2a5aee158?auto=format&fit=crop&q=80&w=1000"
+                  } 
                   alt="Satellite Detection"
                   className="w-full h-full object-cover opacity-80 group-hover:scale-110 transition-transform duration-700"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent p-4 flex flex-col justify-end">
-                  <span className="text-[10px] font-bold bg-cyan-500 text-black px-1.5 py-0.5 w-fit rounded mb-2">YOLOv11: LIVE TARGET</span>
+                  <span className="text-[10px] font-bold bg-cyan-500 text-black px-1.5 py-0.5 w-fit rounded mb-2">OPERATIONAL SIGNAL: {verdict.alpha_discrepancy ? "ANOMALY" : "ACTIVE"}</span>
                   <div className="flex gap-4 text-[10px]">
-                    <span>CARS: 382</span>
-                    <span>TRUCKS: 14</span>
-                    <span>OCCUPANCY: 89.2%</span>
+                    <span>INTENSITY: {(verdict.discrepancy_score * 100).toFixed(1)}%</span>
+                    <span>CONFIDENCE: {(verdict.confidence_score * 100).toFixed(1)}%</span>
                   </div>
                 </div>
               </div>
@@ -151,31 +169,31 @@ export default function SSAPIntelligence({ symbol }: { symbol: string }) {
             <div className="space-y-4">
               <div className="flex items-center gap-2 border-b border-purple-500/30 pb-2">
                 <LucideMessageSquare size={14} className="text-purple-500" />
-                <h4 className="text-[10px] font-bold uppercase tracking-widest text-purple-500">Social Sentiment (DeSo Graph)</h4>
+                <h4 className="text-[10px] font-bold uppercase tracking-widest text-purple-500">News Sentiment (Multi-Source)</h4>
               </div>
               
               <div className="bg-[#1a1a1a] rounded border border-[#333] p-4 min-h-[160px] flex flex-col justify-between">
                 <div className="space-y-3">
                   <div className="flex justify-between items-center text-[10px]">
-                    <span className="text-[#666]">Farcaster Volume (24h)</span>
-                    <span className="font-bold">2.4k Casts</span>
+                    <span className="text-[#666]">News Cycles Analyzed</span>
+                    <span className="font-bold">Real-Time (YF)</span>
                   </div>
                   <div className="h-2 bg-zinc-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-purple-500 transition-all duration-1000" style={{ width: '45%' }} />
+                    <div className="h-full bg-purple-500 transition-all duration-1000" style={{ width: `${Math.abs(verdict.discrepancy_score * 100)}%` }} />
                   </div>
                 </div>
 
                 <div className="mt-4 bg-[#222] p-3 border-l-2 border-purple-500 italic text-[10px] text-zinc-400">
-                  "Recent sentiment on Lens indicates growing skepticism despite strong physical signals..."
+                  {verdict.sentiment_summary}
                 </div>
 
                 <div className="mt-4 flex flex-wrap gap-2">
-                  {["#bearish", "#divergence", "#alpha_leak", "#retail_flow"].map(tag => (
+                  {["#realtime", "#news", "#sentiment", "#alpha"].map(tag => (
                     <span key={tag} className="text-[8px] border border-[#333] px-1.5 py-0.5 rounded text-zinc-500">{tag}</span>
                   ))}
                 </div>
               </div>
-              <p className="text-[10px] text-[#888] italic">"{verdict.sentiment_summary}"</p>
+              <p className="text-[10px] text-[#888] italic">"Fusing global headlines with operational footprints to derive alpha."</p>
             </div>
           </div>
 

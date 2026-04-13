@@ -199,7 +199,8 @@ async def _generate_report(
     conflict_notes: str | None,
 ) -> str:
     """Call OpenRouter to generate a detailed research report."""
-    if not OPENROUTER_API_KEY:
+    is_placeholder = OPENROUTER_API_KEY.startswith("your_") or "api_key_here" in OPENROUTER_API_KEY
+    if not OPENROUTER_API_KEY or is_placeholder:
         return _fallback_report(
             symbol,
             verdict,
@@ -220,6 +221,7 @@ async def _generate_report(
         "2. Address SEBI regulatory context and management governance (ESG) if relevant data is present. "
         "3. Explain the relationship between FII flows and the current verdict. "
         "4. Critical Tone: Do not just parrot the verdict; if agents conflict, express balanced skepticism. "
+        "5. Signal Decay: If an agent's confidence is below 40%, treat it as 'noise' and explicitly mention its unreliability in the report."
         "Write in a precise, professional style. Avoid flowery language."
     )
 
@@ -437,11 +439,17 @@ async def run(
     risk_num = {"LOW": 1, "MEDIUM": 0, "HIGH": -1}.get(risk.risk_level, 0)
 
     # ── 3. Weighted score ───────────────────────────────────────────
-    tech_contribution = tech_num * technical.confidence * weights["technical"]
-    fund_contribution = fund_num * fundamental.confidence * weights["fundamental"]
-    sent_contribution = sent_num * sentiment.confidence * weights["sentiment"]
+    # Phase 3: Confidence-Weighted Contribution with Decay
+    def _apply_decay(num, conf, weight):
+        # Exponential decay for confidence < 40%
+        effective_conf = conf if conf >= 0.4 else (conf ** 2) / 0.4
+        return num * effective_conf * weight
+
+    tech_contribution = _apply_decay(tech_num, technical.confidence, weights["technical"])
+    fund_contribution = _apply_decay(fund_num, fundamental.confidence, weights["fundamental"])
+    sent_contribution = _apply_decay(sent_num, sentiment.confidence, weights["sentiment"])
     risk_contribution = risk_num * 0.7 * weights["risk"]  # use moderate confidence for risk
-    ml_contribution = ml_num * ml_prediction.prediction_confidence * weights["ml_prediction"]
+    ml_contribution = _apply_decay(ml_num, ml_prediction.prediction_confidence, weights["ml_prediction"])
     
     # Regulatory impact: high max_risk_score creates a massive negative penalty regardless of other factors
     reg_num = _SIGNAL_MAP.get(regulatory.signal, 0)
@@ -483,7 +491,11 @@ async def run(
         
     # Earnings Whisper management tone logic
     if earnings_whisper.concall_tone == "bearish" and weighted_score > 0.4:
+        logger.info("⚠ Applying bearish management tone penalty to %s", symbol)
         weighted_score -= 0.15 
+
+    # Final score capping to [-1, 1]
+    weighted_score = max(-1.0, min(1.0, weighted_score))
 
     # ── 4. Decision logic traceability map ──────────────────────────
     risk_signal = {"LOW": "BUY", "MEDIUM": "HOLD", "HIGH": "SELL"}.get(

@@ -11,6 +11,7 @@ interface SocialPulseData {
   confidence: number;
   reasoning: string;
   key_triggers: string[];
+  is_demo?: boolean;
 }
 
 interface SocialPulsePanelProps {
@@ -43,11 +44,18 @@ export default function SocialPulsePanel({ data, symbol }: SocialPulsePanelProps
           <span className="font-mono text-[9px] uppercase text-[#888]">🧠 Dalal Street Social Pulse</span>
           <p className="font-serif text-sm font-bold">{symbol} Social Intelligence</p>
         </div>
-        {data.volume_spike_flag && (
-          <span className="bg-red-100 text-red-700 font-mono text-[8px] px-2 py-0.5 border border-red-400 animate-pulse">
-            SPIKE
-          </span>
-        )}
+        <div className="flex gap-2">
+          {data.is_demo && (
+            <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border border-amber-200 animate-pulse">
+              SIMULATION
+            </div>
+          )}
+          {data.volume_spike_flag && (
+            <span className="bg-red-100 text-red-700 font-mono text-[8px] px-2 py-0.5 border border-red-400 animate-pulse">
+              SPIKE
+            </span>
+          )}
+        </div>
       </div>
 
       <div className="p-4">

@@ -9,18 +9,41 @@ interface ZKPStatus {
   progress: number;
 }
 
-export default function RetailDarkPool({ symbol }: { symbol: string }) {
+interface InstitutionalSignal {
+  symbol: string;
+  deal_type: string;
+  client_name: string;
+  side: string;
+  quantity: number;
+  price: number;
+  value_cr: number;
+  timestamp: string;
+}
+
+export default function RetailDarkPool({ symbol, onBack }: { symbol: string, onBack?: () => void }) {
   const [zkp, setZkp] = useState<ZKPStatus>({ step: "IDLE", progress: 0 });
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState({ volume: 0, version: "v2.0" });
+  const [institutionalSignals, setInstitutionalSignals] = useState<InstitutionalSignal[]>([]);
   const [orderType, setOrderType] = useState<"BUY" | "SELL">("BUY");
   const [quantity, setQuantity] = useState(0.1);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "";
 
   useEffect(() => {
     fetchStats();
-  }, []);
+    if (symbol) fetchSignals();
+  }, [symbol]);
+
+  const fetchSignals = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/api/darkpool/signals?symbol=${symbol}`);
+      const data = await res.json();
+      setInstitutionalSignals(data);
+    } catch (err) {
+      console.error("Failed to fetch signals", err);
+    }
+  };
 
   const fetchStats = async () => {
     try {
@@ -61,13 +84,23 @@ export default function RetailDarkPool({ symbol }: { symbol: string }) {
   return (
     <div className="flex flex-col h-full bg-[#050505] text-[#eee] font-mono overflow-y-auto">
       {/* Privacy Header */}
-      <div className="p-6 border-b border-[#1a1a1a] flex justify-between items-center bg-[#0a0a0a]">
-        <div>
-          <h2 className="text-xl font-bold tracking-tighter flex items-center gap-2 text-indigo-400">
-            <LucideLock size={20} />
-            RETAIL DARK POOL
-          </h2>
-          <p className="text-[9px] uppercase tracking-widest text-[#444]">Confidential Fractional Matching v2.0</p>
+      <div className="p-6 border-b border-[#1a1a1a] flex justify-between items-center bg-[#0a0a0a] sticky top-0 z-10">
+        <div className="flex items-center gap-6">
+          {onBack && (
+            <button 
+              onClick={onBack}
+              className="px-3 py-2 border border-[#333] rounded hover:border-indigo-500 hover:bg-[#111] transition-all group"
+            >
+              <span className="text-[10px] uppercase font-bold text-zinc-500 group-hover:text-white transition-colors">← DASHBOARD</span>
+            </button>
+          )}
+          <div>
+            <h2 className="text-xl font-bold tracking-tighter flex items-center gap-2 text-indigo-400">
+              <LucideLock size={20} />
+              RETAIL DARK POOL
+            </h2>
+            <p className="text-[9px] uppercase tracking-widest text-[#444]">Confidential Fractional Matching v2.0</p>
+          </div>
         </div>
         <div className="flex gap-4">
           <div className="text-right">
@@ -174,17 +207,34 @@ export default function RetailDarkPool({ symbol }: { symbol: string }) {
           <div className="bg-indigo-500/5 border border-indigo-500/20 p-6 rounded-lg">
             <h4 className="text-[10px] font-bold uppercase tracking-widest text-indigo-400 mb-4 flex items-center gap-2">
               <LucideActivity size={14} />
-              Confidential Matching Log
+              Institutional Signal Activity
             </h4>
-            <div className="space-y-2 text-[9px] font-mono text-[#666]">
-              <p>&gt; initializing confidential enclave...</p>
-              <p>&gt; oasis-sapphire-mainnet connected.</p>
-              {zkp.step === "SHIELDED" && (
-                <>
-                  <p className="text-green-500/70">&gt; proof of solvency verified [OK]</p>
-                  <p className="text-indigo-400">&gt; order {zkp.proofId?.slice(0,8)} shielded and moved to dark book.</p>
-                </>
+            <div className="space-y-3">
+              {institutionalSignals.length > 0 ? (
+                institutionalSignals.map((signal, i) => (
+                  <div key={i} className="p-3 bg-[#111] border-l-2 border-indigo-500 rounded-r text-[9px] font-mono">
+                    <div className="flex justify-between items-center mb-1">
+                      <span className="text-indigo-400 font-bold uppercase tracking-widest">{signal.deal_type} DEAL</span>
+                      <span className={signal.side === "BUY" ? "text-green-500" : "text-red-500"}>{signal.side}</span>
+                    </div>
+                    <div className="text-[#888] mb-1">Institution: <span className="text-[#ccc]">{signal.client_name}</span></div>
+                    <div className="flex justify-between text-[#666]">
+                      <span>QTY: {signal.quantity.toLocaleString()}</span>
+                      <span>VALUE: ₹{signal.value_cr} CR</span>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-[9px] font-mono text-[#444] italic">
+                   &gt; scanning institutional block routes...
+                </div>
               )}
+              <div className="mt-4 pt-4 border-t border-[#222] text-[8px] font-mono text-[#444]">
+                <p>&gt; oasis-sapphire-mainnet connected.</p>
+                {zkp.step === "SHIELDED" && (
+                  <p className="text-indigo-400 mt-1">&gt; order {zkp.proofId?.slice(0,8)} shielded and moved to dark book.</p>
+                )}
+              </div>
             </div>
           </div>
         </div>

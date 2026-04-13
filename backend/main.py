@@ -81,7 +81,7 @@ app = FastAPI(
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
-    allow_credentials=True,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
@@ -195,9 +195,6 @@ async def get_rwa_asset(asset_id: str):
     return asset.model_dump()
 
 
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
 def _trigger_orchestrator(run_id: str, symbols: list[str]) -> None:
@@ -321,7 +318,16 @@ async def stream(run_id: str) -> EventSourceResponse:
 
             await asyncio.sleep(1.5)
 
-    return EventSourceResponse(event_generator())
+    return EventSourceResponse(
+        event_generator(),
+        headers={
+            "Access-Control-Allow-Origin": "http://localhost:3000",
+            "Access-Control-Allow-Credentials": "true",
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "Content-Type": "text/event-stream",
+        }
+    )
 
 
 # ──────────────────────────────────────────────────────────────────────
@@ -545,3 +551,8 @@ async def health() -> dict:
         "status": "ok",
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

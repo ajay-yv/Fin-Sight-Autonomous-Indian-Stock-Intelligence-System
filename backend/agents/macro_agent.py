@@ -411,9 +411,9 @@ def _to_macro_result(flow: dict[str, Any]) -> MacroResult:
             date=str(flow.get("date") or datetime.now(timezone.utc).date().isoformat()),
             fii_net=fii_today,
             dii_net=dii_today,
-            fii_5d_trend=fii_trend,
             dii_5d_trend=dii_trend,
             nifty_5d_return=None,
+            is_demo=False,
         )
 
     nifty_5d_return = _to_float(flow.get("nifty_5d_return")) or 0.0
@@ -444,6 +444,7 @@ def _to_macro_result(flow: dict[str, Any]) -> MacroResult:
         fii_5d_trend="unknown",
         dii_5d_trend="unknown",
         nifty_5d_return=round(nifty_5d_return, 2),
+        is_demo=True,
     )
 
 

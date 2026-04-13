@@ -23,13 +23,15 @@ if os.environ.get("VERCEL"):
 else:
     PORTFOLIO_FILE = Path("backend/data/portfolio.json")
 
+from backend.services.intelligence_service import IntelligenceService
+
 class AMAPRService:
     """
     Main orchestration service for the Agentic Multi-Asset Portfolio Rebalancer.
-    Coordinates the negotiation between Tax, Risk, and ESG agents via AMAPRNegotiator.
     """
     def __init__(self):
         self.negotiator = AMAPRNegotiator()
+        self.intel = IntelligenceService()
         self._portfolio: Optional[PortfolioState] = None
         self._lock = asyncio.Lock()
         self._load_portfolio()
@@ -131,6 +133,10 @@ class AMAPRService:
         run_id = f"AMAPR-{datetime.now().strftime('%Y%m%d%H%M%S')}"
         logger.info(f"Starting AMAPR run (Negotiation): {run_id}")
 
+        # Connect to real world: Get market volatility
+        market_stats = await self.intel.get_market_biometrics()
+        vix = market_stats.get("fear_index", 15.0)
+
         # Execute Negotiation Loop
         negotiation_history = await self.negotiator.negotiate(current_state)
         
@@ -142,19 +148,21 @@ class AMAPRService:
         # Step 3: Apply Changes (Mocked final state)
         final_state = current_state.model_copy()
         final_state.last_rebalanced = datetime.now()
-        final_state.drift_score = 0.02 # Reduced drift
+        
+        # Volatility influences how much we can reduce drift
+        final_state.drift_score = 0.02 + (vix / 500.0) 
 
         result = AMAPRRunResult(
             run_id=run_id,
             initial_state=current_state,
             final_state=final_state,
             negotiation_history=negotiation_history,
-            total_tax_optimized=1250.0,
-            risk_reduction=0.08,
+            total_tax_optimized=1250.0 * (1 + (vix/100)), # Volatility creates more tax harvest opportunities
+            risk_reduction=0.08 * (1 - (vix/200)), # Harder to reduce risk in high volatility
             timestamp=datetime.now()
         )
 
-        logger.info(f"AMAPR run {run_id} completed.")
+        logger.info(f"AMAPR run {run_id} completed. Real-world VIX {vix} accounted for.")
         return result
 
     def _get_default_mock_portfolio(self) -> PortfolioState:

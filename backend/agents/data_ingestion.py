@@ -14,6 +14,7 @@ import pandas as pd
 import yfinance as yf
 
 from backend.models.schemas import OHLCVData
+from api.cache import ohlcv_cache
 
 logger = logging.getLogger(__name__)
 
@@ -67,9 +68,13 @@ async def run(symbol: str) -> OHLCVData:
     Fetch 1 year of daily OHLCV data for an NSE symbol using yfinance.
     """
     loop = asyncio.get_event_loop()
-
-    # Apply aliases first if present
     lookup_symbol = symbol.strip().upper()
+
+    # Phase 3: Cache Check
+    cached_data = ohlcv_cache.get(lookup_symbol)
+    if cached_data:
+        logger.info("⚡ Cache hit for %s OHLCV data", lookup_symbol)
+        return cached_data
     if lookup_symbol in _SYMBOL_ALIASES:
         logger.info("Applying alias: %s -> %s", lookup_symbol, _SYMBOL_ALIASES[lookup_symbol])
         lookup_symbol = _SYMBOL_ALIASES[lookup_symbol]
@@ -123,7 +128,7 @@ async def run(symbol: str) -> OHLCVData:
     )
 
     # ── Build OHLCVData ─────────────────────────────────────────────
-    return OHLCVData(
+    result = OHLCVData(
         symbol=clean_symbol,
         dates=[d.strftime("%Y-%m-%d") for d in df.index],
         opens=[float(v) for v in df["Open"]],
@@ -134,3 +139,8 @@ async def run(symbol: str) -> OHLCVData:
         current_price=round(current_price, 2),
         change_pct=round(change_pct, 2),
     )
+    
+    # Phase 3: Store in cache (TTL: 4 hours)
+    ohlcv_cache.set(clean_symbol, result, 4 * 3600)
+    
+    return result

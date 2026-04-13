@@ -10,6 +10,7 @@ interface EarningsWhisperData {
   confidence: number;
   reasoning: string;
   key_triggers: string[];
+  is_demo?: boolean;
 }
 
 interface EarningsWhisperPanelProps {
@@ -44,7 +45,14 @@ export default function EarningsWhisperPanel({ data, symbol }: EarningsWhisperPa
       <div className="flex justify-between items-center px-4 py-2 border-b border-[var(--color-war-border)]">
         <div>
           <span className="font-mono text-[9px] uppercase text-[#888]">🎯 Predictive Earnings Whisper</span>
+        <div className="flex gap-2 items-center">
+          {data.is_demo && (
+            <div className="bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-mono text-[8px] font-bold border border-amber-200 animate-pulse">
+              SIMULATION
+            </div>
+          )}
           <p className="font-serif text-sm font-bold">{symbol} Q-Surprise Engine</p>
+        </div>
         </div>
         <div className="text-right">
           <div className="font-mono text-lg font-black">{data.whisper_score.toFixed(1)}</div>

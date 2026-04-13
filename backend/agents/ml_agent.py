@@ -12,17 +12,21 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from sklearn.ensemble import GradientBoostingClassifier
-from sklearn.metrics import (
-    accuracy_score,
-    confusion_matrix,
-    f1_score,
-    precision_score,
-    recall_score,
-)
-from sklearn.model_selection import TimeSeriesSplit
-from sklearn.pipeline import Pipeline
-from sklearn.preprocessing import StandardScaler
+try:
+    from sklearn.ensemble import GradientBoostingClassifier
+    from sklearn.metrics import (
+        accuracy_score,
+        confusion_matrix,
+        f1_score,
+        precision_score,
+        recall_score,
+    )
+    from sklearn.model_selection import TimeSeriesSplit
+    from sklearn.pipeline import Pipeline
+    from sklearn.preprocessing import StandardScaler
+    SKLEARN_AVAILABLE = True
+except ImportError:
+    SKLEARN_AVAILABLE = False
 
 from backend.models.schemas import (
     FeatureImportance,
@@ -123,6 +127,7 @@ def _suppressed_prediction(
         suppression_reason=reason,
         weight_override=0.0,
         score_override=5,
+        is_demo=True,
     )
 
 
@@ -443,6 +448,16 @@ async def run(symbol: str, ohlcv: OHLCVData) -> MLPrediction:
     X = dataset[feature_columns]
     y = dataset["target"].astype(int)
 
+    if not SKLEARN_AVAILABLE:
+        message = "ML model (scikit-learn) is not installed in this environment. Prediction suppressed."
+        logger.warning("[ML] %s %s", symbol, message)
+        return _suppressed_prediction(
+            symbol=symbol,
+            reason=message,
+            trigger_message=message,
+            metrics=_zero_metrics(training_samples=len(X), test_samples=0),
+        )
+
     total_samples = len(X)
     if total_samples < MIN_TRAINING_SAMPLES:
         message = (
@@ -594,4 +609,5 @@ async def run(symbol: str, ohlcv: OHLCVData) -> MLPrediction:
         key_triggers=key_triggers,
         verdict=signal,
         model_valid=True,
+        is_demo=False,
     )

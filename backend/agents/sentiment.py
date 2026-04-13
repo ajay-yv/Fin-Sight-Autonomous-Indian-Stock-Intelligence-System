@@ -17,6 +17,8 @@ import feedparser
 import httpx
 
 from backend.models.schemas import OHLCVData, SentimentData
+from backend.services.sentiment_engine import sentiment_engine
+from api.cache import news_cache
 
 logger = logging.getLogger(__name__)
 
@@ -137,6 +139,7 @@ def _fallback_sentiment(
         confidence=round(confidence, 2),
         reasoning=f"{reason}. {momentum_trigger}.",
         key_triggers=triggers,
+        is_demo=True,
     )
 
 
@@ -199,7 +202,15 @@ async def run(symbol: str, ohlcv: Optional[OHLCVData] = None) -> SentimentData:
     or LLM output is unavailable.
     """
     loop = asyncio.get_event_loop()
-    headlines, insufficient_news = await loop.run_in_executor(_executor, _fetch_headlines, symbol)
+    
+    # Phase 3: News Caching
+    cached_headlines = news_cache.get(f"news_{symbol}")
+    if cached_headlines:
+        logger.info("⚡ News cache hit for %s", symbol)
+        headlines, insufficient_news = cached_headlines
+    else:
+        headlines, insufficient_news = await loop.run_in_executor(_executor, _fetch_headlines, symbol)
+        news_cache.set(f"news_{symbol}", (headlines, insufficient_news), 30 * 60) # 30 min TTL
 
     logger.info("%s sentiment: fetched %d headlines", symbol, len(headlines))
 
@@ -211,9 +222,10 @@ async def run(symbol: str, ohlcv: Optional[OHLCVData] = None) -> SentimentData:
             reason="Headline coverage is too sparse for stable NLP sentiment",
         )
 
-    # If no API key, use deterministic price-action fallback.
-    if not OPENROUTER_API_KEY:
-        logger.warning("OPENROUTER_API_KEY not set — using price-action fallback")
+    # If no API key or placeholder, use deterministic price-action fallback.
+    is_placeholder = OPENROUTER_API_KEY.startswith("your_") or "api_key_here" in OPENROUTER_API_KEY
+    if not OPENROUTER_API_KEY or is_placeholder:
+        logger.warning("OPENROUTER_API_KEY is missing or placeholder — using price-action fallback")
         return _fallback_sentiment(
             symbol=symbol,
             headlines=headlines,
@@ -272,6 +284,14 @@ async def run(symbol: str, ohlcv: Optional[OHLCVData] = None) -> SentimentData:
             symbol, sentiment_label, sentiment_score, signal, confidence,
         )
 
+        # Phase 2: Local FinBERT Processing
+        # Cross-validate the LLM signal with a local FinBERT model
+        local_sentiment = sentiment_engine.analyze_headlines(headlines)
+        
+        # If local signal is live, we can potentially lower is_demo to False
+        # (Assuming 'live' means we are using a specialized model beyond simple heuristics)
+        is_demo_final = not local_sentiment["is_live"]
+
         return SentimentData(
             symbol=symbol,
             headlines=headlines,
@@ -280,8 +300,9 @@ async def run(symbol: str, ohlcv: Optional[OHLCVData] = None) -> SentimentData:
             key_themes=key_themes[:5],
             signal=signal,
             confidence=round(confidence, 2),
-            reasoning=reasoning,
+            reasoning=f"{reasoning} [Local Signal: {local_sentiment['engine']}]",
             key_triggers=key_triggers,
+            is_demo=is_demo_final,
         )
 
     except Exception as exc:
