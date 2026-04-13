@@ -9,7 +9,7 @@
     "frontend"
   ],
   "scripts": {
-    "build": "npm run build --workspace=frontend && mv frontend/.next .next"
+    "build": "npm run build --workspace=frontend"
   },
   "dependencies": {
     "next": "15.2.1",

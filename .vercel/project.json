@@ -8,7 +8,7 @@
     "devCommand": null,
     "installCommand": null,
     "buildCommand": null,
-    "outputDirectory": null,
+    "outputDirectory": "frontend/.next",
     "rootDirectory": null,
     "directoryListing": false,
     "nodeVersion": "22.x"
