@@ -2,11 +2,14 @@
   "name": "finsight-monorepo",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "workspaces": [
     "frontend"
   ],
   "scripts": {
-    "build": "cd frontend && next build"
+    "build": "npm run build --workspace=frontend"
   },
   "dependencies": {
     "next": "15.2.1",
