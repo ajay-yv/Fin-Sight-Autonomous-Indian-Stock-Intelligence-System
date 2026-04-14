@@ -6,6 +6,28 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "next": "15.2.1",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "axios": "^1.14.0",
+    "lightweight-charts": "^5.1.0",
+    "lucide-react": "^1.7.0",
+    "recharts": "^3.8.1",
+    "lightningcss": "^1.28.2",
+    "tailwindcss": "^4",
+    "@tailwindcss/postcss": "^4"
+  },
+  "devDependencies": {
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "eslint": "^9",
+    "eslint-config-next": "15.2.1",
+    "postcss": "^8",
+    "autoprefixer": "^10",
+    "typescript": "^5"
   }
 }
