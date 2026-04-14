@@ -28,6 +28,7 @@ from backend.agents import (
 )
 from backend.database import save_agent_output, save_synthesis_result, update_run_status
 from backend.models.schemas import MLPrediction, MacroResult, ModelMetrics, OHLCVData, RiskMetrics, SentimentData
+from backend.context import IntelligenceContext
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +49,10 @@ _CARD_AGENT_WEIGHTS: dict[str, float] = {
 # ──────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────
+def _update_progress(run_id: str, symbol: str, agent_name: str, status: str) -> None:
+    """Log progress and potentially update DB (stub for future granular tracking)."""
+    logger.info("[%s] %s: %s", symbol, agent_name, status)
+
 def _save_success(run_id: str, symbol: str, agent_name: str, result) -> None:
     """Persist a successful agent output to the database."""
     signal = getattr(result, "signal", None)
@@ -98,7 +103,13 @@ def _save_success(run_id: str, symbol: str, agent_name: str, result) -> None:
             if isinstance(suppression_reason, str) and suppression_reason.strip():
                 reasoning = suppression_reason.strip()
 
-    data_dict = result.model_dump(mode="json") if hasattr(result, "model_dump") else None
+    # Defensive serialization
+    if hasattr(result, "model_dump"):
+        data_dict = result.model_dump(mode="json")
+    elif hasattr(result, "dict"):
+        data_dict = result.dict()
+    else:
+        data_dict = None
 
     if isinstance(data_dict, dict) and agent_name in _CARD_AGENT_WEIGHTS:
         verdict = str(data_dict.get("verdict") or data_dict.get("signal") or signal or "HOLD").upper()
@@ -210,23 +221,24 @@ def _mark_symbol_downstream_failed(run_id: str, symbol: str, reason: str) -> Non
 async def _run_data_ingestion_stage(
     run_id: str,
     symbols: list[str],
-) -> dict[str, OHLCVData]:
+) -> dict[str, IntelligenceContext]:
     """
-    Stage 1: fetch OHLCV data for all symbols in parallel.
-    Uses asyncio.gather for speed.
+    Stage 1 (parallel): fetch OHLCV and Ticker Metadata for each symbol.
     """
-    ohlcv_dict: dict[str, OHLCVData] = {}
+    context_dict: dict[str, IntelligenceContext] = {}
 
-    async def _fetch_one(symbol: str):
+    async def _fetch_one(symbol: str) -> None:
         try:
-            ohlcv = await data_ingestion.run(symbol)
-            ohlcv_dict[symbol] = ohlcv
-            _save_success(run_id, symbol, "data_ingestion", ohlcv)
-            logger.info("✓ %s data_ingestion complete (%d rows)", symbol, len(ohlcv.dates))
+            _update_progress(run_id, symbol, "data_ingestion", "running")
+            context = await data_ingestion.run(symbol)
+            context_dict[symbol] = context
+            _save_success(run_id, symbol, "data_ingestion", context.ohlcv)
+            logger.info("✓ %s data_ingestion complete", symbol)
         except Exception as exc:
             error_msg = f"{type(exc).__name__}: {exc}"
             logger.error("✗ %s data_ingestion FAILED: %s", symbol, error_msg)
             _save_failure(run_id, symbol, "data_ingestion", error_msg)
+            # Cascade failure
             _mark_symbol_downstream_failed(
                 run_id,
                 symbol,
@@ -234,13 +246,13 @@ async def _run_data_ingestion_stage(
             )
 
     await asyncio.gather(*[_fetch_one(s) for s in symbols])
-    return ohlcv_dict
+    return context_dict
 
 
 async def _run_eda_and_ml_stage(
     run_id: str,
     symbols: list[str],
-    ohlcv_dict: dict[str, OHLCVData],
+    context_dict: dict[str, IntelligenceContext],
 ) -> dict[str, MLPrediction | None]:
     """
     Stage 2 (parallel):
@@ -251,6 +263,7 @@ async def _run_eda_and_ml_stage(
 
     async def _run_eda() -> None:
         try:
+            ohlcv_dict = {s: context_dict[s].ohlcv for s in symbols if s in context_dict}
             eda_result = await eda_agent.run(run_id, symbols, ohlcv_dict)
             # Run-level output row uses symbol="ALL".
             _save_success(run_id, "ALL", "eda", eda_result)
@@ -262,8 +275,8 @@ async def _run_eda_and_ml_stage(
 
     async def _run_ml_batch() -> None:
         ml_tasks = [
-            ml_agent.run(symbol, ohlcv_dict[symbol])
-            for symbol in symbols
+            ml_agent.run(symbol, context_dict[symbol])
+            for symbol in symbols if symbol in context_dict
         ]
         ml_results = await asyncio.gather(*ml_tasks, return_exceptions=True)
 
@@ -322,7 +335,7 @@ async def _run_macro_stage(
 async def _run_symbol_analysis_stage(
     run_id: str,
     symbol: str,
-    ohlcv: OHLCVData,
+    context: IntelligenceContext,
     ml_prediction: MLPrediction | None,
     macro_result: MacroResult | None,
 ) -> None:
@@ -368,7 +381,7 @@ async def _run_symbol_analysis_stage(
     async def _run_options_flow() -> None:
         nonlocal options_result
         try:
-            options_result = await options_flow_agent.run(symbol, ohlcv.current_price)
+            options_result = await options_flow_agent.run(symbol, context.ohlcv.current_price)
             _save_success(run_id, symbol, "options_flow", options_result)
             logger.info("✓ %s options_flow: signal=%s", symbol, options_result.signal)
         except Exception as exc:
@@ -390,7 +403,7 @@ async def _run_symbol_analysis_stage(
     async def _run_technical() -> None:
         nonlocal tech_result
         try:
-            tech_result = await technical.run(symbol, ohlcv)
+            tech_result = await technical.run(symbol, context)
             _save_success(run_id, symbol, "technical", tech_result)
             logger.info("✓ %s technical: %s (%.0f%%)", symbol, tech_result.signal, tech_result.confidence * 100)
         except Exception as exc:
@@ -401,7 +414,7 @@ async def _run_symbol_analysis_stage(
     async def _run_fundamental() -> None:
         nonlocal fund_result
         try:
-            fund_result = await fundamental.run(symbol, ohlcv)
+            fund_result = await fundamental.run(symbol, context)
             _save_success(run_id, symbol, "fundamental", fund_result)
             logger.info("✓ %s fundamental: %s (%.0f%%)", symbol, fund_result.signal, fund_result.confidence * 100)
         except Exception as exc:
@@ -412,7 +425,7 @@ async def _run_symbol_analysis_stage(
     async def _run_sentiment() -> None:
         nonlocal sent_result
         try:
-            sent_result = await sentiment.run(symbol, ohlcv)
+            sent_result = await sentiment.run(symbol, context)
             _save_success(run_id, symbol, "sentiment", sent_result)
             logger.info("✓ %s sentiment: %s (%.0f%%)", symbol, sent_result.signal, sent_result.confidence * 100)
         except Exception as exc:
@@ -423,7 +436,7 @@ async def _run_symbol_analysis_stage(
     async def _run_risk() -> None:
         nonlocal risk_result
         try:
-            risk_result = await risk.run(symbol, ohlcv)
+            risk_result = await risk.run(symbol, context)
             _save_success(run_id, symbol, "risk", risk_result)
             logger.info("✓ %s risk: %s (beta=%.2f)", symbol, risk_result.risk_level, risk_result.beta)
         except Exception as exc:
@@ -645,8 +658,8 @@ async def _run_analysis_async(run_id: str, symbols: list[str]) -> None:
     logger.info("▶ Analysis run %s started for symbols: %s", run_id, symbols)
 
     # Stage 1: Parallel Ingestion
-    ohlcv_dict = await _run_data_ingestion_stage(run_id, symbols)
-    symbols_with_data = list(ohlcv_dict.keys())
+    context_dict = await _run_data_ingestion_stage(run_id, symbols)
+    symbols_with_data = list(context_dict.keys())
 
     if not symbols_with_data:
         _save_failure(run_id, "ALL", "eda", "Skipped - no ingestion symbols")
@@ -656,7 +669,7 @@ async def _run_analysis_async(run_id: str, symbols: list[str]) -> None:
     # Stage 2: EDA, ML, and Macro in parallel
     # Note: ML stage internally handles symbol parallelism
     ml_predictions, macro_results, _ = await asyncio.gather(
-        _run_eda_and_ml_stage(run_id, symbols_with_data, ohlcv_dict),
+        _run_eda_and_ml_stage(run_id, symbols_with_data, context_dict),
         _run_macro_stage(run_id, symbols_with_data),
         asyncio.sleep(0), # Yield control
     )
@@ -672,7 +685,7 @@ async def _run_analysis_async(run_id: str, symbols: list[str]) -> None:
                 await _run_symbol_analysis_stage(
                     run_id,
                     symbol,
-                    ohlcv_dict[symbol],
+                    context_dict[symbol],
                     ml_predictions.get(symbol),
                     macro_results.get(symbol),
                 )

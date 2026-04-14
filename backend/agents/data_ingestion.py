@@ -14,7 +14,8 @@ import pandas as pd
 import yfinance as yf
 
 from backend.models.schemas import OHLCVData
-from api.cache import ohlcv_cache
+from backend.context import IntelligenceContext
+from api.cache import ohlcv_cache, context_cache
 
 logger = logging.getLogger(__name__)
 
@@ -63,18 +64,26 @@ def _fetch_ticker_info(yf_symbol: str) -> dict:
         return {"current_price": 0.0, "previous_close": 0.0}
 
 
-async def run(symbol: str) -> OHLCVData:
+async def run(symbol: str) -> IntelligenceContext:
     """
-    Fetch 1 year of daily OHLCV data for an NSE symbol using yfinance.
+    Fetch comprehensive context for an NSE symbol using yfinance.
     """
     loop = asyncio.get_event_loop()
     lookup_symbol = symbol.strip().upper()
 
-    # Phase 3: Cache Check
-    cached_data = ohlcv_cache.get(lookup_symbol)
-    if cached_data:
-        logger.info("⚡ Cache hit for %s OHLCV data", lookup_symbol)
-        return cached_data
+    # Global Context Cache Check
+    cached_context = context_cache.get(lookup_symbol)
+    if cached_context:
+        logger.info("⚡ Global Context Cache hit for %s", lookup_symbol)
+        return cached_context
+
+    # Level 2 OHLCV Cache Check
+    cached_ohlcv = ohlcv_cache.get(lookup_symbol)
+    if cached_ohlcv:
+        logger.info("⚡ Level 2 OHLCV Cache hit for %s", lookup_symbol)
+        # We still need Ticker Info if we want to return a full context, 
+        # but for now, we'll fetch it if ohlcv is cached.
+        pass
     if lookup_symbol in _SYMBOL_ALIASES:
         logger.info("Applying alias: %s -> %s", lookup_symbol, _SYMBOL_ALIASES[lookup_symbol])
         lookup_symbol = _SYMBOL_ALIASES[lookup_symbol]
@@ -140,7 +149,21 @@ async def run(symbol: str) -> OHLCVData:
         change_pct=round(change_pct, 2),
     )
     
-    # Phase 3: Store in cache (TTL: 4 hours)
+    # Phase 3: Store OHLCV in Level 2 cache (TTL: 4 hours)
     ohlcv_cache.set(clean_symbol, result, 4 * 3600)
     
-    return result
+    # ── Create and Cache IntelligenceContext ─────────────────────────
+    context = IntelligenceContext(
+        symbol=clean_symbol,
+        ohlcv=result,
+        ticker_info=ticker_info,
+        metadata={
+            "sector": ticker_info.get("sector") or "Default",
+            "resolved_symbol": resolved_symbol
+        }
+    )
+    
+    # Store in Global Context Cache (TTL: 1 hour)
+    context_cache.set(clean_symbol, context, 3600)
+    
+    return context

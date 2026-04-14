@@ -15,7 +15,7 @@ from api.services.market_data import (
     UpstreamServiceError,
 )
 
-router = APIRouter(prefix="/api/stock", tags=["stock"])
+router = APIRouter(prefix="/stock", tags=["stock"])
 
 
 def _service(request: Request) -> NSEMarketDataService:

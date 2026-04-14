@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from backend.models.gmss_schemas import SimulationReport
 from backend.services.gmss.gmss_service import GMSSService
 
-router = APIRouter(prefix="/api/gmss", tags=["Macro Simulator"])
+router = APIRouter(prefix="/gmss", tags=["Macro Simulator"])
 gmss_service = GMSSService()
 
 @router.post("/simulate/{scenario_key}", response_model=SimulationReport)

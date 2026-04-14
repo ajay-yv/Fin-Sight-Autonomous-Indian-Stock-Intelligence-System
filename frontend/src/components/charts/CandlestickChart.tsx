@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createChart, ColorType, CrosshairMode, CandlestickSeries, HistogramSeries, createSeriesMarkers } from "lightweight-charts";
+import { API_BASE_URL } from "@/lib/api";
 import type {
   CandlestickData,
   HistogramData,
@@ -43,7 +44,7 @@ export interface CandlestickChartProps {
 type TimeRange = "1M" | "3M" | "6M" | "1Y";
 
 const VALID_SYMBOL = /^[A-Z0-9&.\-]{1,20}$/;
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+// API_BASE_URL imported from @/lib/api
 
 function markerTimeToMillis(value: Time): number {
   if (typeof value === "string") {
@@ -209,8 +210,8 @@ export default function CandlestickChart({
     try {
       // Use the run-specific reliable endpoint if runId is present
       const endpoint = runId 
-        ? `${API_BASE_URL}/api/run/${runId}/stock/${encodeURIComponent(normalizedSymbol)}/ohlcv`
-        : `${API_BASE_URL}/api/stock/${encodeURIComponent(normalizedSymbol)}/ohlcv`;
+        ? `/api/run/${runId}/stock/${encodeURIComponent(normalizedSymbol)}/ohlcv`
+        : `/api/stock/${encodeURIComponent(normalizedSymbol)}/ohlcv`;
 
       const res = await fetch(endpoint, {
         signal: controller.signal,

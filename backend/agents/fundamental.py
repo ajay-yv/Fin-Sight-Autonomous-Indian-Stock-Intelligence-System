@@ -14,6 +14,7 @@ from typing import Any, Optional
 import yfinance as yf
 
 from backend.models.schemas import FundamentalData, OHLCVData
+from backend.context import IntelligenceContext
 
 logger = logging.getLogger(__name__)
 
@@ -57,12 +58,12 @@ def _fetch_info(symbol: str) -> dict[str, Any]:
     return {}
 
 
-async def run(symbol: str, ohlcv: OHLCVData) -> FundamentalData:
+async def run(symbol: str, context: IntelligenceContext) -> FundamentalData:
     """
-    Fetch fundamental data via yfinance and produce a scored signal.
+    Produce a scored signal using fundamental data from the context.
     """
-    loop = asyncio.get_event_loop()
-    info = await loop.run_in_executor(_executor, _fetch_info, symbol)
+    info = context.ticker_info
+    ohlcv = context.ohlcv
 
     # ── Extract metrics (all may be None) ───────────────────────────
     pe: Optional[float] = info.get("trailingPE")

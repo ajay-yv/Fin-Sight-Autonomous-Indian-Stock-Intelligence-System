@@ -69,7 +69,7 @@ export default function HomePage() {
         console.log("Syncing extracted portfolio assets...", portfolioAssets);
         const totalVal = portfolioAssets.reduce((sum, a) => sum + (a.valuation || 0), 0);
         
-        await fetch(`${api.API_BASE_URL}/api/amapr/portfolio`, {
+        await fetch(`/api/amapr/portfolio`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

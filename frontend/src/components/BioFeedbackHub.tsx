@@ -38,7 +38,7 @@ export default function BioFeedbackHub({ onBack }: { onBack?: () => void }) {
 
   const fetchBioSync = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/biofeedback/status`);
+      const res = await fetch(`/api/biofeedback/status`);
       const result = await res.json();
       setData(result);
     } catch (err) {

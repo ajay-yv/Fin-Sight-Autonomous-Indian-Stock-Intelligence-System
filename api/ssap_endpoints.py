@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from backend.models.ssap_schemas import SSAPVerdict
 from backend.services.ssap_service import SSAPService
 
-router = APIRouter(prefix="/api/ssap", tags=["SSAP"])
+router = APIRouter(prefix="/ssap", tags=["SSAP"])
 ssap_service = SSAPService()
 
 @router.get("/verdict/{symbol}", response_model=SSAPVerdict)

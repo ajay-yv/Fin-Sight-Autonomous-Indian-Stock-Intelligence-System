@@ -63,7 +63,7 @@ export default function PortfolioRebalancer({ onBack }: { onBack?: () => void })
   const fetchPortfolio = async () => {
     setFetchError(null);
     try {
-      const res = await fetch(`${API_BASE}/api/amapr/portfolio`);
+      const res = await fetch(`/api/amapr/portfolio`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setPortfolio(data);
@@ -76,7 +76,7 @@ export default function PortfolioRebalancer({ onBack }: { onBack?: () => void })
   const handleSimulateRebalance = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/amapr/rebalance`, {
+      const res = await fetch(`/api/amapr/rebalance`, {
         method: "POST",
         headers: { "Content-Type": "application/json" }
       });

@@ -102,7 +102,7 @@ export default function IntelligenceFeed({ runId }: { runId: string }) {
   const prevAgentsRef = useRef<Record<string, AgentStatus>>({});
 
   useEffect(() => {
-    const sseUrl = `${API_BASE_URL}/stream/${runId}`;
+    const sseUrl = `/api/stream/${runId}`;
     const source = new EventSource(sseUrl);
 
     source.addEventListener("status", (e) => {

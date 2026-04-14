@@ -49,7 +49,7 @@ export default function SSAPIntelligence({ symbol, onBack }: { symbol: string, o
   const fetchVerdict = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`${API_BASE}/api/ssap/verdict/${symbol}`);
+      const res = await fetch(`/api/ssap/verdict/${symbol}`);
       const data = await res.json();
       setVerdict(data);
     } catch (err) {

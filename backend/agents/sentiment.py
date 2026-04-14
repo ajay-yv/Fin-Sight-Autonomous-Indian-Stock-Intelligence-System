@@ -17,6 +17,7 @@ import feedparser
 import httpx
 
 from backend.models.schemas import OHLCVData, SentimentData
+from backend.context import IntelligenceContext
 from backend.services.sentiment_engine import sentiment_engine
 from api.cache import news_cache
 
@@ -195,22 +196,31 @@ async def _call_openrouter(headlines: list[str]) -> str:
     raise RuntimeError("OpenRouter request unexpectedly produced no response")
 
 
-async def run(symbol: str, ohlcv: Optional[OHLCVData] = None) -> SentimentData:
+async def run(symbol: str, context: IntelligenceContext) -> SentimentData:
     """
-    Fetch news headlines and analyse sentiment via LLM.
-    Falls back to price-action-derived sentiment when news coverage is thin
-    or LLM output is unavailable.
+    Fetch news headlines and analyse sentiment via LLM or price-action fallback.
+    Utilises the centralized IntelligenceContext for data consistency.
     """
+    ohlcv = context.ohlcv
     loop = asyncio.get_event_loop()
     
-    # Phase 3: News Caching
-    cached_headlines = news_cache.get(f"news_{symbol}")
-    if cached_headlines:
-        logger.info("⚡ News cache hit for %s", symbol)
-        headlines, insufficient_news = cached_headlines
+    # Check context for existing headlines
+    if context.headlines:
+        logger.info("⚡ Using pre-fetched headlines from context for %s", symbol)
+        headlines = context.headlines
+        insufficient_news = len(headlines) < 4
     else:
-        headlines, insufficient_news = await loop.run_in_executor(_executor, _fetch_headlines, symbol)
-        news_cache.set(f"news_{symbol}", (headlines, insufficient_news), 30 * 60) # 30 min TTL
+        # Phase 3: News Caching
+        cached_headlines = news_cache.get(f"news_{symbol}")
+        if cached_headlines:
+            logger.info("⚡ News cache hit for %s", symbol)
+            headlines, insufficient_news = cached_headlines
+        else:
+            headlines, insufficient_news = await loop.run_in_executor(_executor, _fetch_headlines, symbol)
+            news_cache.set(f"news_{symbol}", (headlines, insufficient_news), 30 * 60) # 30 min TTL
+        
+        # Save back to context
+        context.headlines = headlines
 
     logger.info("%s sentiment: fetched %d headlines", symbol, len(headlines))
 

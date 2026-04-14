@@ -16,15 +16,16 @@ except ModuleNotFoundError:
     import pandas_ta_classic as ta  # type: ignore[import-not-found]  # noqa: F401
 
 from backend.models.schemas import OHLCVData, TechnicalSignals
+from backend.context import IntelligenceContext
 
 logger = logging.getLogger(__name__)
 
 
-async def run(symbol: str, ohlcv: OHLCVData) -> TechnicalSignals:
+async def run(symbol: str, context: IntelligenceContext) -> TechnicalSignals:
     """
-    Run technical analysis on OHLCV data and return a signal with
-    confidence score and human-readable reasoning.
+    Run technical analysis on OHLCV data from context.
     """
+    ohlcv = context.ohlcv
     # ── Build DataFrame ─────────────────────────────────────────────
     df = pd.DataFrame(
         {

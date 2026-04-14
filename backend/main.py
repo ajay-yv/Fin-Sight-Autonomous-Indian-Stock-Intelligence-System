@@ -20,7 +20,7 @@ from contextlib import asynccontextmanager
 from datetime import datetime, timedelta, timezone
 from typing import TYPE_CHECKING, Any, AsyncGenerator, List
 
-from fastapi import BackgroundTasks, FastAPI, HTTPException
+from fastapi import APIRouter, BackgroundTasks, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from api.routes.stock import router as stock_router
@@ -91,16 +91,8 @@ from api.ssap_endpoints import router as ssap_router
 from api.darkpool_endpoints import router as darkpool_router
 from api.gmss_endpoints import router as gmss_router
 from api.biofeedback_endpoints import router as bio_router
+# Routers will be included at the end of the file
 
-app.include_router(stock_router)
-app.include_router(amapr_router)
-app.include_router(ssap_router)
-app.include_router(darkpool_router)
-app.include_router(gmss_router)
-app.include_router(bio_router)
-
-
-# ──────────────────────────────────────────────────────────────────────
 # Helpers
 # ──────────────────────────────────────────────────────────────────────
 def _build_run_status(run_data: dict) -> RunStatus:
@@ -241,10 +233,7 @@ def _get_agent_output_row(
         return session.scalar(stmt)
 
 
-# ──────────────────────────────────────────────────────────────────────
-# POST /analyze
-# ──────────────────────────────────────────────────────────────────────
-@app.post("/analyze")
+@app.post("/api/analyze")
 async def analyze(request: AnalysisRequest, bg: BackgroundTasks) -> JSONResponse:
     """Accept an analysis request, persist it, and start the pipeline."""
     save_run(request.run_id, request.symbols)
@@ -265,7 +254,7 @@ async def analyze(request: AnalysisRequest, bg: BackgroundTasks) -> JSONResponse
 # ──────────────────────────────────────────────────────────────────────
 # GET /status/{run_id}
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/status/{run_id}")
+@app.get("/api/status/{run_id}")
 async def status(run_id: str) -> RunStatus:
     """Return the full RunStatus for a given run."""
     run_data = get_run(run_id)
@@ -277,7 +266,7 @@ async def status(run_id: str) -> RunStatus:
 # ──────────────────────────────────────────────────────────────────────
 # GET /stream/{run_id}  (SSE)
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/stream/{run_id}")
+@app.get("/api/stream/{run_id}")
 async def stream(run_id: str) -> EventSourceResponse:
     """
     Server-Sent Events stream that polls the DB every 1.5 s and pushes
@@ -333,7 +322,7 @@ async def stream(run_id: str) -> EventSourceResponse:
 # ──────────────────────────────────────────────────────────────────────
 # GET /runs
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/runs")
+@app.get("/api/runs")
 async def runs() -> list[dict]:
     """Return the last 10 runs with their status and symbols."""
     return get_recent_runs(limit=10)
@@ -342,7 +331,7 @@ async def runs() -> list[dict]:
 # ──────────────────────────────────────────────────────────────────────
 # GET /report/{run_id}/{symbol}
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/report/{run_id}/{symbol}")
+@app.get("/api/report/{run_id}/{symbol}")
 async def report(run_id: str, symbol: str) -> JSONResponse:
     """Return the full detailed_report text for a specific symbol."""
     run_data = get_run(run_id)
@@ -376,7 +365,7 @@ async def report(run_id: str, symbol: str) -> JSONResponse:
 # ──────────────────────────────────────────────────────────────────────
 # GET /eda/{run_id}
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/eda/{run_id}")
+@app.get("/api/eda/{run_id}")
 async def get_eda(run_id: str) -> MultiStockEDA:
     """Return run-level MultiStockEDA for a completed run."""
     run_data = get_run(run_id)
@@ -410,7 +399,7 @@ async def get_eda(run_id: str) -> MultiStockEDA:
 # ──────────────────────────────────────────────────────────────────────
 # GET /ml/{run_id}/{symbol}
 # ──────────────────────────────────────────────────────────────────────
-@app.get("/ml/{run_id}/{symbol}")
+@app.get("/api/ml/{run_id}/{symbol}")
 async def get_ml_prediction(run_id: str, symbol: str) -> MLPrediction:
     """Return ML prediction output for a specific symbol in a completed run."""
     run_data = get_run(run_id)
@@ -505,17 +494,18 @@ async def get_run_ohlcv(run_id: str, symbol: str) -> dict[str, Any]:
     )
     try:
         from backend.agents import data_ingestion as _di
-        ohlcv = await _di.run(symbol_upper)
+        context = await _di.run(symbol_upper)
+        ohlcv_data = context.ohlcv
         candles = [
             {
-                "time": ohlcv.dates[i],
-                "open": ohlcv.opens[i],
-                "high": ohlcv.highs[i],
-                "low": ohlcv.lows[i],
-                "close": ohlcv.closes[i],
-                "volume": ohlcv.volumes[i],
+                "time": ohlcv_data.dates[i],
+                "open": ohlcv_data.opens[i],
+                "high": ohlcv_data.highs[i],
+                "low": ohlcv_data.lows[i],
+                "close": ohlcv_data.closes[i],
+                "volume": ohlcv_data.volumes[i],
             }
-            for i in range(len(ohlcv.dates))
+            for i in range(len(ohlcv_data.dates))
         ]
         # Persist the freshly fetched data so next request hits the DB
         from backend.database import save_agent_output as _sao
@@ -526,8 +516,8 @@ async def get_run_ohlcv(run_id: str, symbol: str) -> dict[str, Any]:
             status="completed",
             signal=None,
             confidence=None,
-            reasoning=f"Live fallback fetch: {len(ohlcv.dates)} days",
-            data_dict=ohlcv.model_dump(mode="json"),
+            reasoning=f"Live fallback fetch: {len(ohlcv_data.dates)} days",
+            data_dict=ohlcv_data.model_dump(mode="json"),
         )
         return {"symbol": symbol_upper, "candles": candles}
     except Exception as exc:
@@ -552,6 +542,17 @@ async def health() -> dict:
         "timestamp": datetime.now(timezone.utc).isoformat(),
     }
 
+
+# ──────────────────────────────────────────────────────────────────────
+# Registration
+app.include_router(stock_router, prefix="/api")
+app.include_router(amapr_router, prefix="/api")
+app.include_router(ssap_router, prefix="/api")
+app.include_router(darkpool_router, prefix="/api")
+app.include_router(gmss_router, prefix="/api")
+app.include_router(bio_router, prefix="/api")
+
+# Core router included above
 
 if __name__ == "__main__":
     import uvicorn

@@ -34,6 +34,7 @@ from backend.models.schemas import (
     ModelMetrics,
     OHLCVData,
 )
+from backend.context import IntelligenceContext
 
 warnings.filterwarnings("ignore")
 
@@ -422,10 +423,11 @@ class RegimeAwareGradientBoosting:
         return np.asarray(predictions, dtype=int)
 
 
-async def run(symbol: str, ohlcv: OHLCVData) -> MLPrediction:
+async def run(symbol: str, context: IntelligenceContext) -> MLPrediction:
     """
-    Run the ML prediction pipeline on OHLCV data.
+    Run the ML prediction pipeline on OHLCV data from context.
     """
+    ohlcv = context.ohlcv
     df = pd.DataFrame(
         {
             "Open": ohlcv.opens,

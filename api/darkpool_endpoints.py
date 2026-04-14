@@ -2,7 +2,7 @@ from fastapi import APIRouter, HTTPException
 from typing import Dict, List
 from backend.services.darkpool.darkpool_service import DarkPoolService
 
-router = APIRouter(prefix="/api/darkpool", tags=["Dark Pool"])
+router = APIRouter(prefix="/darkpool", tags=["Dark Pool"])
 darkpool_service = DarkPoolService()
 
 @router.post("/order")

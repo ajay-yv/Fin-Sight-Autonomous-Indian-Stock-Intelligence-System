@@ -5,7 +5,7 @@ from datetime import datetime
 from backend.models.amapr_schemas import PortfolioState, AMAPRRunResult
 from backend.services.amapr_service import AMAPRService
 
-router = APIRouter(prefix="/api/amapr", tags=["AMAPR"])
+router = APIRouter(prefix="/amapr", tags=["AMAPR"])
 amapr_service = AMAPRService()
 
 @router.get("/portfolio", response_model=PortfolioState)

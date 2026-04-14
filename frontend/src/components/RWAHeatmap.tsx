@@ -52,7 +52,7 @@ export default function RWAHeatmap() {
   const [selected, setSelected] = useState<RWAAsset | null>(null);
 
   useEffect(() => {
-    fetch(`${API_BASE}/api/rwa/list`)
+    fetch(`/api/rwa/list`)
       .then((r) => r.json())
       .then((data) => {
         setRwas(Array.isArray(data) ? data : []);

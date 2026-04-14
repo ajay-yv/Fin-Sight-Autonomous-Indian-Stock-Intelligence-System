@@ -1,4 +1,5 @@
 import logging
+from datetime import datetime
 from typing import List, Dict
 from backend.models.gmss_schemas import SimulationReport, PropagationDelta, MacroShock
 from backend.services.gmss.abm_engine import ABMEngine
@@ -16,7 +17,25 @@ class GMSSService:
         self.scenario_engine = ScenarioEngine()
         self.abm_engine = ABMEngine()
         self.intel = IntelligenceService()
-        self.simulations: Dict[str, SimulationReport] = {}
+        self.simulations: Dict[str, SimulationReport] = {
+            "test": SimulationReport(
+                simulation_id="test",
+                shock=MacroShock(
+                    shock_id="test",
+                    event_type="FINANCIAL",
+                    description="A manual test scenario",
+                    duration_months=3,
+                    initial_magnitude=0.5,
+                    target_sectors=["Technology"],
+                    started_at=datetime.now()
+                ),
+                propagation_steps=[],
+                affected_sectors=["Technology"],
+                max_supply_chain_stress=0.0,
+                recovery_estimated_months=6,
+                narrative_summary="This is a test simulation report for health checks."
+            )
+        }
 
     async def start_simulation(self, scenario_key: str) -> SimulationReport:
         """

@@ -6,7 +6,14 @@ const nextConfig = {
   typescript: {
     ignoreBuildErrors: true,
   },
-  // Ensure we don't try to use serverless the wrong way
+  rewrites: async () => {
+    return [
+      {
+        source: '/api/:path*',
+        destination: 'http://localhost:8000/api/:path*',
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from backend.services.biofeedback.biofeedback_service import BioFeedbackService
 
-router = APIRouter(prefix="/api/biofeedback", tags=["Bio-Feedback"])
+router = APIRouter(prefix="/biofeedback", tags=["Bio-Feedback"])
 bio_service = BioFeedbackService()
 
 @router.get("/status")

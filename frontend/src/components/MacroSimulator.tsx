@@ -45,7 +45,7 @@ export default function MacroSimulator({ onBack }: { onBack?: () => void }) {
 
   const fetchMacroBaselines = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/stock/macro-indicators`);
+      const res = await fetch(`/api/stock/macro-indicators`);
       const data = await res.json();
       setMacroBaselines(data);
     } catch (err) {
@@ -57,7 +57,7 @@ export default function MacroSimulator({ onBack }: { onBack?: () => void }) {
     setLoading(true);
     setActiveScenario(key);
     try {
-      const res = await fetch(`${API_BASE}/api/gmss/simulate/${key}`, { method: "POST" });
+      const res = await fetch(`/api/gmss/simulate/${key}`, { method: "POST" });
       const data = await res.json();
       setReport(data);
     } catch (err) {

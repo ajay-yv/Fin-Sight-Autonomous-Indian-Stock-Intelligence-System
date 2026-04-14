@@ -66,7 +66,7 @@ export default function WarRoomPage() {
   
   useEffect(() => {
     // We use EventSource to trigger status refetches
-    const sseUrl = `${API_BASE_URL}/stream/${runId}`;
+    const sseUrl = `/api/stream/${runId}`;
 
     const updateStatus = () => {
       api.getRunStatus(runId).then((rs) => {

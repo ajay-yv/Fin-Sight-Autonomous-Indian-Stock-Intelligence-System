@@ -37,7 +37,7 @@ export default function RetailDarkPool({ symbol, onBack }: { symbol: string, onB
 
   const fetchSignals = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/darkpool/signals?symbol=${symbol}`);
+      const res = await fetch(`/api/darkpool/signals?symbol=${symbol}`);
       const data = await res.json();
       setInstitutionalSignals(data);
     } catch (err) {
@@ -47,7 +47,7 @@ export default function RetailDarkPool({ symbol, onBack }: { symbol: string, onB
 
   const fetchStats = async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/darkpool/stats`);
+      const res = await fetch(`/api/darkpool/stats`);
       const data = await res.json();
       setStats({ volume: data.confidential_volume, version: data.protocol_version });
     } catch (err) {
@@ -64,7 +64,7 @@ export default function RetailDarkPool({ symbol, onBack }: { symbol: string, onB
     setTimeout(() => setZkp({ step: "VERIFYING", progress: 90 }), 1600);
     
     try {
-      const res = await fetch(`${API_BASE}/api/darkpool/order?symbol=${symbol}&side=${orderType}&quantity=${quantity}`, {
+      const res = await fetch(`/api/darkpool/order?symbol=${symbol}&side=${orderType}&quantity=${quantity}`, {
         method: "POST"
       });
       const result = await res.json();

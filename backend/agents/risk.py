@@ -17,6 +17,7 @@ import pandas as pd
 import yfinance as yf
 
 from backend.models.schemas import OHLCVData, RiskMetrics
+from backend.context import IntelligenceContext
 
 logger = logging.getLogger(__name__)
 
@@ -42,11 +43,11 @@ def _fetch_nifty(period: str = "1y") -> Optional[pd.Series]:
         return None
 
 
-async def run(symbol: str, ohlcv: OHLCVData) -> RiskMetrics:
+async def run(symbol: str, context: IntelligenceContext) -> RiskMetrics:
     """
-    Calculate risk metrics from OHLCV price data and benchmark
-    against Nifty 50.
+    Calculate risk metrics from OHLCV price data in context.
     """
+    ohlcv = context.ohlcv
     loop = asyncio.get_event_loop()
 
     closes = pd.Series(ohlcv.closes, index=pd.to_datetime(ohlcv.dates))
